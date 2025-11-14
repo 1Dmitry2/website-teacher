@@ -6,8 +6,12 @@
       <slot name="login">
       </slot>
       <form  @submit.prevent="handleLogin" class="space-y-4 flex flex-col">
-        <router-link>Забыли пароль?</router-link>
-        <ui-button>Войти</ui-button>
+        <ui-input/>
+        <ui-input/>
+        <router-link to="/">
+          <ui-button variant="link" type="button">Забыли пароль?</ui-button>
+        </router-link>
+        <ui-button type="submit" variant="primary">Войти</ui-button>
       </form>
     </div>
   </div>
@@ -15,6 +19,7 @@
 
 <script setup lang="ts">
 import UiButton from "../ui/Ui-button.vue";
+import UiInput from "../ui/Ui-input.vue";
 </script>
 
 <style lang="scss" scoped>
