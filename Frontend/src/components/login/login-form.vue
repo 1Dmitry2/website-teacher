@@ -5,9 +5,9 @@
       </slot>
       <slot name="login">
       </slot>
-      <form  @submit.prevent="handleLogin" class="space-y-4 flex flex-col">
-        <ui-input/>
-        <ui-input/>
+      <form @submit="onForm" class="space-y-4 flex flex-col">
+        <ui-input type="email" variant="primary" :model-value="email"/>
+        <ui-input type="password" variant="primary" :model-value="password"/>
         <router-link to="/">
           <ui-button variant="link" type="button">Забыли пароль?</ui-button>
         </router-link>
@@ -18,8 +18,15 @@
 </template>
 
 <script setup lang="ts">
+import { ref } from "vue";
 import UiButton from "../ui/Ui-button.vue";
 import UiInput from "../ui/Ui-input.vue";
+
+const email = ref('');
+const password = ref('');
+const onForm = (e: Event) => {
+  e.preventDefault()
+}
 </script>
 
 <style lang="scss" scoped>
