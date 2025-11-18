@@ -13,6 +13,8 @@
         :type="type"
         :placeholder="placeholder"
         :disabled="disabled"
+        :min="$attrs.min"
+        :required="$attrs.required"
     />
   </div>
 </template>

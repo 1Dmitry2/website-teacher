@@ -87,7 +87,6 @@ const handleFileUpload = async (event: Event) => {
     alert(error instanceof Error ? error.message : 'Ошибка загрузки файла');
   } finally {
     uploading.value = false;
-    // Сбрасываем input, чтобы можно было загрузить тот же файл снова
     if (target) {
       target.value = '';
     }

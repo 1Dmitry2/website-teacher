@@ -2,7 +2,6 @@
   <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
     <h1 class="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-800 mb-4 sm:mb-6">Новости</h1>
     
-    <!-- Блоки страницы -->
     <PageBlocks />
     
     <div v-if="loading" class="text-center py-8 text-gray-500">
@@ -45,6 +44,9 @@
               />
             </div>
           </div>
+          
+          <!-- Комментарии -->
+          <PostComments :post-id="post.id" />
         </div>
       </article>
     </div>
@@ -56,6 +58,7 @@ import { ref, onMounted, computed } from 'vue';
 import { useRoute } from 'vue-router';
 import { apiClient, type Post } from '../api/client';
 import PageBlocks from '../components/PageBlocks.vue';
+import PostComments from '../components/PostComments.vue';
 
 const route = useRoute();
 const posts = ref<Post[]>([]);
@@ -63,27 +66,21 @@ const blocks = ref<any[]>([]);
 const loading = ref(true);
 const error = ref('');
 
-// Фильтруем посты по текущей странице
 const filteredPosts = computed(() => {
   const currentPath = route.path;
   return posts.value.filter(post => {
-    // Если у поста нет страниц или пустой массив, не показываем (пост должен быть привязан к странице)
     if (!post.pages || post.pages.length === 0) {
       return false;
     }
-    // Проверяем, есть ли текущая страница в списке страниц поста
-    // Убеждаемся, что pages - это массив
     const pagesArray = Array.isArray(post.pages) ? post.pages : [];
     return pagesArray.includes(currentPath);
   });
 });
 
-// Проверяем, есть ли блоки на странице
 const hasBlocks = computed(() => {
   return blocks.value && blocks.value.length > 0;
 });
 
-// Показывать ли сообщение "нет новостей"
 const shouldShowNoPostsMessage = computed(() => {
   return filteredPosts.value.length === 0 && !hasBlocks.value;
 });
@@ -108,7 +105,6 @@ const fetchBlocks = async () => {
     const fetchedBlocks = await apiClient.getPageBlocks(pageParam);
     blocks.value = fetchedBlocks || [];
   } catch (err) {
-    // Игнорируем ошибки загрузки блоков, чтобы не мешать отображению постов
     console.error('Error fetching blocks:', err);
     blocks.value = [];
   }

@@ -19,45 +19,49 @@
     </div>
     
     <!-- Lightbox -->
-    <div 
-      v-if="lightboxOpen"
-      class="fixed inset-0 bg-black bg-opacity-90 z-50 flex items-center justify-center p-4"
-      @click="closeLightbox"
-    >
-      <button 
-        @click.stop="closeLightbox"
-        class="absolute top-4 right-4 text-white hover:text-gray-300 text-4xl"
-        aria-label="Закрыть"
+    <Transition name="lightbox-fade">
+      <div 
+        v-if="lightboxOpen"
+        class="fixed inset-0 bg-black/95 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+        @click="closeLightbox"
       >
-        &times;
-      </button>
-      <button 
-        v-if="content.images.length > 1"
-        @click.stop="previousImage"
-        class="absolute left-4 text-white hover:text-gray-300 text-4xl"
-        aria-label="Предыдущее изображение"
-      >
-        &#8249;
-      </button>
-      <button 
-        v-if="content.images.length > 1"
-        @click.stop="nextImage"
-        class="absolute right-4 text-white hover:text-gray-300 text-4xl"
-        aria-label="Следующее изображение"
-      >
-        &#8250;
-      </button>
-      <div class="max-w-4xl max-h-full">
-        <img 
-          :src="getImageUrl(content.images[lightboxIndex].src)" 
-          :alt="content.images[lightboxIndex].caption || `Изображение ${lightboxIndex + 1}`"
-          class="max-w-full max-h-[90vh] object-contain"
-        />
-        <p v-if="content.images[lightboxIndex].caption" class="text-white text-center mt-4">
-          {{ content.images[lightboxIndex].caption }}
-        </p>
+        <button 
+          @click.stop="closeLightbox"
+          class="absolute top-4 right-4 text-white hover:text-gray-300 text-5xl font-light transition-all duration-200 hover:scale-110 z-10"
+          aria-label="Закрыть"
+        >
+          &times;
+        </button>
+        <button 
+          v-if="content.images.length > 1"
+          @click.stop="previousImage"
+          class="absolute left-4 text-white hover:text-gray-300 text-5xl font-light transition-all duration-200 hover:scale-110 z-10 bg-black/30 hover:bg-black/50 rounded-full w-12 h-12 flex items-center justify-center"
+          aria-label="Предыдущее изображение"
+        >
+          &#8249;
+        </button>
+        <button 
+          v-if="content.images.length > 1"
+          @click.stop="nextImage"
+          class="absolute right-4 text-white hover:text-gray-300 text-5xl font-light transition-all duration-200 hover:scale-110 z-10 bg-black/30 hover:bg-black/50 rounded-full w-12 h-12 flex items-center justify-center"
+          aria-label="Следующее изображение"
+        >
+          &#8250;
+        </button>
+        <Transition name="image-scale" mode="out-in">
+          <div :key="lightboxIndex" class="max-w-4xl max-h-full">
+            <img 
+              :src="getImageUrl(content.images[lightboxIndex].src)" 
+              :alt="content.images[lightboxIndex].caption || `Изображение ${lightboxIndex + 1}`"
+              class="max-w-full max-h-[90vh] object-contain rounded-lg shadow-2xl"
+            />
+            <p v-if="content.images[lightboxIndex].caption" class="text-white text-center mt-4 text-lg">
+              {{ content.images[lightboxIndex].caption }}
+            </p>
+          </div>
+        </Transition>
       </div>
-    </div>
+    </Transition>
   </div>
 </template>
 
@@ -114,4 +118,35 @@ const previousImage = () => {
 };
 </script>
 
+<style scoped>
+/* Анимация появления/исчезновения lightbox */
+.lightbox-fade-enter-active,
+.lightbox-fade-leave-active {
+  transition: opacity 0.3s ease;
+}
+
+.lightbox-fade-enter-from,
+.lightbox-fade-leave-to {
+  opacity: 0;
+}
+
+/* Анимация масштабирования изображения */
+.image-scale-enter-active {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.image-scale-leave-active {
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.image-scale-enter-from {
+  opacity: 0;
+  transform: scale(0.9);
+}
+
+.image-scale-leave-to {
+  opacity: 0;
+  transform: scale(0.95);
+}
+</style>
 

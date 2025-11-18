@@ -75,21 +75,60 @@
               <textarea v-model="formData.content" rows="10" class="w-full px-3 py-2 border border-gray-300 rounded-md" required></textarea>
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Изображения (URL через запятую)</label>
-              <ui-input v-model="imagesInput" variant="primary" type="text" placeholder="https://example.com/img1.jpg, https://example.com/img2.jpg" />
+              <label class="block text-sm font-medium text-gray-700 mb-1">Изображения</label>
+              <div class="space-y-2">
+                <div>
+                  <ui-input v-model="imagesInput" variant="primary" type="text" placeholder="URL через запятую: https://example.com/img1.jpg, https://example.com/img2.jpg" />
+                </div>
+                <div class="flex items-center gap-2">
+                  <span class="text-sm text-gray-600">или</span>
+                </div>
+                <div>
+                  <input
+                    type="file"
+                    ref="fileInput"
+                    @change="handleFileUpload"
+                    multiple
+                    accept="image/*"
+                    class="hidden"
+                  />
+                  <button
+                    type="button"
+                    @click="fileInput?.click()"
+                    class="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-md text-sm font-medium transition-colors"
+                  >
+                    Загрузить изображения
+                  </button>
+                  <div v-if="uploadingImages.length > 0" class="mt-2 space-y-1">
+                    <div v-for="(status, index) in uploadingImages" :key="index" class="text-xs text-gray-600">
+                      {{ status }}
+                    </div>
+                  </div>
+                </div>
+                <div v-if="formData.images.length > 0" class="mt-2">
+                  <div class="text-xs text-gray-600 mb-1">Загруженные изображения:</div>
+                  <div class="flex flex-wrap gap-2">
+                    <div v-for="(img, index) in formData.images" :key="index" class="relative group">
+                      <img :src="img" :alt="`Изображение ${index + 1}`" class="w-20 h-20 object-cover rounded border border-gray-300" />
+                      <button
+                        type="button"
+                        @click="removeImage(index)"
+                        class="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        ×
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">Страницы для отображения</label>
-              <select 
-                v-model="formData.pages" 
-                multiple 
-                class="w-full px-3 py-2 border border-gray-300 rounded-md min-h-[100px]"
-              >
-                <option v-for="route in availableRoutes" :key="route.path" :value="route.path">
-                  {{ route.displayName }}
-                </option>
-              </select>
-              <p class="text-xs text-gray-500 mt-1">Удерживайте Ctrl (Cmd на Mac) для выбора нескольких страниц</p>
+              <PageSelector
+                :selected-pages="formData.pages"
+                :available-routes="availableRoutes"
+                @update:selected-pages="formData.pages = $event"
+              />
             </div>
             <div class="flex items-center gap-2">
               <input type="checkbox" v-model="formData.is_published" id="published" class="w-4 h-4 text-indigo-600 border-gray-300 rounded" />
@@ -112,6 +151,7 @@ import { ref, onMounted, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import UiButton from '../../components/ui/Ui-button.vue';
 import UiInput from '../../components/ui/Ui-input.vue';
+import PageSelector from '../../components/ui/PageSelector.vue';
 import { adminApi, type Post } from '../../api/admin';
 import { adminAuthService } from '../../utils/adminAuth';
 
@@ -121,6 +161,8 @@ const loading = ref(true);
 const error = ref('');
 const showCreateModal = ref(false);
 const editingPost = ref<Post | null>(null);
+const fileInput = ref<HTMLInputElement | null>(null);
+const uploadingImages = ref<string[]>([]);
 
 // Маппинг роутов на описания
 const routeDescriptions: Record<string, string> = {
@@ -145,19 +187,15 @@ const routeDescriptions: Record<string, string> = {
   '/parents/hardening': 'Родителям - Закаливание в семье',
 };
 
-// Родительские страницы, которые нужно исключить (у них есть подстраницы)
 const parentPagesToExclude = ['/portfolio', '/methodology', '/achievements', '/parents'];
 
-// Получаем список доступных страниц из роутера (исключаем админские, служебные и родительские страницы)
 const availableRoutes = computed(() => {
   return router.getRoutes().filter(route => {
-    // Исключаем админские страницы, страницы входа и регистрации
     if (route.path.startsWith('/admin') || 
         route.path === '/user-login' || 
         route.path === '/register') {
       return false;
     }
-    // Исключаем родительские страницы (кроме новостей "/")
     if (parentPagesToExclude.includes(route.path)) {
       return false;
     }
@@ -242,9 +280,46 @@ const savePost = async () => {
   }
 };
 
+const handleFileUpload = async (event: Event) => {
+  const target = event.target as HTMLInputElement;
+  const files = target.files;
+  if (!files || files.length === 0) return;
+
+  uploadingImages.value = [];
+  
+  for (let i = 0; i < files.length; i++) {
+    const file = files[i];
+    uploadingImages.value.push(`Загрузка ${file.name}...`);
+    
+    try {
+      const url = await adminApi.uploadFile(file);
+      if (!formData.value.images.includes(url)) {
+        formData.value.images.push(url);
+      }
+      uploadingImages.value[i] = `✓ ${file.name} загружен`;
+    } catch (error) {
+      uploadingImages.value[i] = `✗ Ошибка загрузки ${file.name}`;
+      console.error('Error uploading file:', error);
+    }
+  }
+  
+  setTimeout(() => {
+    uploadingImages.value = [];
+  }, 3000);
+  
+  if (target) {
+    target.value = '';
+  }
+};
+
+const removeImage = (index: number) => {
+  formData.value.images.splice(index, 1);
+};
+
 const closeModal = () => {
   showCreateModal.value = false;
   editingPost.value = null;
+  uploadingImages.value = [];
   formData.value = {
     title: '',
     content: '',

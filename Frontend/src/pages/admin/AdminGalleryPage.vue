@@ -49,16 +49,11 @@
             <div><label class="block text-sm font-medium text-gray-700 mb-1">Текст (для фото с текстом)</label><textarea v-model="formData.text" rows="5" class="w-full px-3 py-2 border border-gray-300 rounded-md" placeholder="Добавьте текст к фотографии"></textarea></div>
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">Страницы для отображения</label>
-              <select 
-                v-model="formData.pages" 
-                multiple 
-                class="w-full px-3 py-2 border border-gray-300 rounded-md min-h-[100px]"
-              >
-                <option v-for="route in availableRoutes" :key="route.path" :value="route.path">
-                  {{ route.displayName }}
-                </option>
-              </select>
-              <p class="text-xs text-gray-500 mt-1">Удерживайте Ctrl (Cmd на Mac) для выбора нескольких страниц</p>
+              <PageSelector
+                :selected-pages="formData.pages"
+                :available-routes="availableRoutes"
+                @update:selected-pages="formData.pages = $event"
+              />
             </div>
           </form>
           <!-- Кнопки (фиксированные) -->
@@ -77,6 +72,7 @@ import { ref, onMounted, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import UiButton from '../../components/ui/Ui-button.vue';
 import UiInput from '../../components/ui/Ui-input.vue';
+import PageSelector from '../../components/ui/PageSelector.vue';
 import { adminApi, type GalleryItem } from '../../api/admin';
 import { adminAuthService } from '../../utils/adminAuth';
 
@@ -114,10 +110,8 @@ const routeDescriptions: Record<string, string> = {
   '/parents/hardening': 'Родителям - Закаливание в семье',
 };
 
-// Получаем список доступных страниц из роутера (исключаем админские и служебные)
 const availableRoutes = computed(() => {
   return router.getRoutes().filter(route => {
-    // Исключаем админские страницы, страницы входа и регистрации
     return !route.path.startsWith('/admin') && 
            route.path !== '/user-login' && 
            route.path !== '/register';

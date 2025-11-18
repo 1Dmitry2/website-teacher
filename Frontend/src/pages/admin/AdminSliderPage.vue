@@ -58,18 +58,22 @@
             <div><label class="block text-sm font-medium text-gray-700 mb-1">Описание</label><textarea v-model="formData.description" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-md"></textarea></div>
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">Страницы для отображения</label>
-              <select 
-                v-model="formData.pages" 
-                multiple 
-                class="w-full px-3 py-2 border border-gray-300 rounded-md min-h-[100px]"
-              >
-                <option v-for="route in availableRoutes" :key="route.path" :value="route.path">
-                  {{ route.displayName }}
-                </option>
-              </select>
-              <p class="text-xs text-gray-500 mt-1">Удерживайте Ctrl (Cmd на Mac) для выбора нескольких страниц</p>
+              <PageSelector
+                :selected-pages="formData.pages"
+                :available-routes="availableRoutes"
+                @update:selected-pages="formData.pages = $event"
+              />
             </div>
-            <div><label class="block text-sm font-medium text-gray-700 mb-1">Порядок</label><ui-input v-model="formData.display_order" variant="primary" type="number" required /></div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Порядок</label>
+              <ui-input 
+                v-model.number="formData.display_order" 
+                variant="primary" 
+                type="number" 
+                min="1"
+                required
+              />
+            </div>
           </form>
           <!-- Кнопки (фиксированные) -->
           <div class="px-6 py-4 border-t border-gray-200 flex gap-2 justify-end flex-shrink-0">
@@ -83,10 +87,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue';
+import { ref, onMounted, computed, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import UiButton from '../../components/ui/Ui-button.vue';
 import UiInput from '../../components/ui/Ui-input.vue';
+import PageSelector from '../../components/ui/PageSelector.vue';
 import { adminApi, type SliderItem } from '../../api/admin';
 import { adminAuthService } from '../../utils/adminAuth';
 
@@ -124,10 +129,8 @@ const routeDescriptions: Record<string, string> = {
   '/parents/hardening': 'Родителям - Закаливание в семье',
 };
 
-// Получаем список доступных страниц из роутера (исключаем админские и служебные)
 const availableRoutes = computed(() => {
   return router.getRoutes().filter(route => {
-    // Исключаем админские страницы, страницы входа и регистрации
     return !route.path.startsWith('/admin') && 
            route.path !== '/user-login' && 
            route.path !== '/register';
@@ -141,7 +144,13 @@ const availableRoutes = computed(() => {
   });
 });
 
-const formData = ref({ image_url: '', title: '', description: '', pages: [] as string[], display_order: 0 });
+const formData = ref({ image_url: '', title: '', description: '', pages: [] as string[], display_order: 1 });
+
+watch(() => formData.value.display_order, (newValue) => {
+  if (typeof newValue === 'number' && (isNaN(newValue) || newValue < 1)) {
+    formData.value.display_order = 1;
+  }
+});
 
 const fetchSlider = async () => {
   loading.value = true;
@@ -166,7 +175,7 @@ const editItem = (item: SliderItem) => {
     title: item.title || '', 
     description: item.description || '', 
     pages: item.pages || [],
-    display_order: item.display_order 
+    display_order: item.display_order || 1
   };
 };
 
@@ -197,7 +206,7 @@ const saveItem = async () => {
 const closeModal = () => {
   showCreateModal.value = false;
   editingItem.value = null;
-  formData.value = { image_url: '', title: '', description: '', pages: [], display_order: 0 };
+  formData.value = { image_url: '', title: '', description: '', pages: [], display_order: 1 };
 };
 
 onMounted(fetchSlider);

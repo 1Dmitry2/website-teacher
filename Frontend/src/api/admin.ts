@@ -277,11 +277,9 @@ class AdminApiClient extends ApiClient {
     const formData = new FormData();
     formData.append('file', file);
 
-    // Для FormData НЕ устанавливаем Content-Type - браузер сделает это автоматически с правильным boundary
     const headers: Record<string, string> = {
       'Authorization': `Bearer ${token}`,
     };
-    // Явно НЕ добавляем Content-Type для FormData
 
     const url = `${this.baseURL}/admin/upload`;
     console.log('Uploading to:', url);

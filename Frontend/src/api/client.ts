@@ -32,6 +32,16 @@ export interface Post {
   updated_at: string;
 }
 
+export interface Comment {
+  id: string;
+  post_id: string;
+  user_id: number;
+  reply_to?: string;
+  text: string;
+  is_admin: boolean;
+  created_at: string;
+}
+
 export interface ApiResponse<T> {
   message: string;
   data?: T;
@@ -144,21 +154,21 @@ export class ApiClient {
     return response.data!;
   }
 
-  async getPostComments(postId: string): Promise<any[]> {
-    const response = await this.request<any[]>(`/posts/${postId}/comments`, { method: 'GET' });
+  async getPostComments(postId: string): Promise<Comment[]> {
+    const response = await this.request<Comment[]>(`/posts/${postId}/comments`, { method: 'GET' });
     return response.data || [];
   }
 
-  async createComment(postId: string, text: string): Promise<any> {
-    const response = await this.request<any>(`/posts/${postId}/comments`, {
+  async createComment(postId: string, text: string): Promise<Comment> {
+    const response = await this.request<Comment>(`/posts/${postId}/comments`, {
       method: 'POST',
       body: JSON.stringify({ text }),
     });
     return response.data!;
   }
 
-  async replyToComment(commentId: string, text: string): Promise<any> {
-    const response = await this.request<any>(`/comments/${commentId}/reply`, {
+  async replyToComment(commentId: string, text: string): Promise<Comment> {
+    const response = await this.request<Comment>(`/comments/${commentId}/reply`, {
       method: 'POST',
       body: JSON.stringify({ text }),
     });

@@ -106,20 +106,21 @@
             <form v-else @submit.prevent="saveBlock" class="space-y-4">
               <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Страницы для отображения</label>
-                <select 
-                  v-model="formData.pages" 
-                  multiple 
-                  class="w-full px-3 py-2 border border-gray-300 rounded-md min-h-[100px] focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
-                >
-                  <option v-for="route in availableRoutes" :key="route.path" :value="route.path">
-                    {{ route.displayName }}
-                  </option>
-                </select>
-                <p class="text-xs text-gray-500 mt-1">Удерживайте Ctrl (Cmd на Mac) для выбора нескольких страниц</p>
+                <PageSelector
+                  :selected-pages="formData.pages"
+                  :available-routes="availableRoutes"
+                  @update:selected-pages="formData.pages = $event"
+                />
               </div>
               <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Порядок</label>
-                <ui-input v-model="formData.display_order" variant="primary" type="number" placeholder="0" />
+                <ui-input 
+                  v-model.number="formData.display_order" 
+                  variant="primary" 
+                  type="number" 
+                  placeholder="1" 
+                  min="1"
+                />
               </div>
               
               <!-- Формы для разных типов блоков -->
@@ -176,6 +177,7 @@ import BlockFormText from '../../components/blocks/BlockFormText.vue';
 import BlockFormSlider from '../../components/blocks/BlockFormSlider.vue';
 import BlockFormGallery from '../../components/blocks/BlockFormGallery.vue';
 import BlockFormVideo from '../../components/blocks/BlockFormVideo.vue';
+import PageSelector from '../../components/ui/PageSelector.vue';
 import { adminApi, type Block } from '../../api/admin';
 import { adminAuthService } from '../../utils/adminAuth';
 import type { TextBlockContent } from '../../components/blocks/BlockFormText.vue';
@@ -215,19 +217,15 @@ const routeDescriptions: Record<string, string> = {
   '/parents/hardening': 'Родителям - Закаливание в семье',
 };
 
-// Родительские страницы, которые нужно исключить (у них есть подстраницы)
 const parentPagesToExclude = ['/portfolio', '/methodology', '/achievements', '/parents'];
 
-// Получаем список доступных страниц из роутера (исключаем админские, служебные и родительские страницы)
 const availableRoutes = computed(() => {
   return router.getRoutes().filter(route => {
-    // Исключаем админские страницы, страницы входа и регистрации
     if (route.path.startsWith('/admin') || 
         route.path === '/user-login' || 
         route.path === '/register') {
       return false;
     }
-    // Исключаем родительские страницы (кроме новостей "/")
     if (parentPagesToExclude.includes(route.path)) {
       return false;
     }
@@ -246,13 +244,11 @@ const formData = ref({
   page: '',
   pages: [] as string[],
   type: 'text' as Block['type'],
-  display_order: 0,
+  display_order: 1,
   content: {} as Record<string, any>,
 });
 
-// Инициализация контента блока на основе типа
 const initializeBlockContent = (type: Block['type'], existingContent?: Record<string, any>) => {
-  // Если content пустой или не объект, используем пустые значения
   const content = existingContent && typeof existingContent === 'object' ? existingContent : {};
   
   switch (type) {
@@ -283,19 +279,17 @@ const initializeBlockContent = (type: Block['type'], existingContent?: Record<st
   }
 };
 
-// Выбор типа блока
 const selectBlockType = (type: Block['type']) => {
   selectedBlockType.value = type;
   formData.value.type = type;
   initializeBlockContent(type);
 };
 
-// Следим за изменениями контента и обновляем formData.content
-watch(blockContent, (newContent) => {
-  if (newContent) {
-    formData.value.content = newContent as Record<string, any>;
+watch(() => formData.value.display_order, (newValue) => {
+  if (typeof newValue === 'number' && (isNaN(newValue) || newValue < 1)) {
+    formData.value.display_order = 1;
   }
-}, { deep: true });
+});
 
 const fetchBlocks = async () => {
   loading.value = true;
@@ -315,12 +309,12 @@ const fetchBlocks = async () => {
 
 const editBlock = (block: Block) => {
   editingBlock.value = block;
-  selectedBlockType.value = block.type; // Пропускаем выбор типа при редактировании
+  selectedBlockType.value = block.type;
   formData.value = {
     page: block.page,
     pages: block.pages || [],
     type: block.type,
-    display_order: block.display_order,
+    display_order: block.display_order || 1,
     content: block.content,
   };
   // Инициализируем контент для редактирования
@@ -339,12 +333,10 @@ const deleteBlock = async (id: string) => {
 
 const saveBlock = async () => {
   try {
-    // Убеждаемся, что content обновлен из blockContent
     if (blockContent.value) {
       formData.value.content = blockContent.value as Record<string, any>;
     }
     
-    // Автоматически заполняем поле page из первого элемента pages для обратной совместимости
     if (formData.value.pages && formData.value.pages.length > 0) {
       formData.value.page = formData.value.pages[0];
     } else {
@@ -372,7 +364,7 @@ const closeModal = () => {
     page: '',
     pages: [],
     type: 'text',
-    display_order: 0,
+    display_order: 1,
     content: {},
   };
 };

@@ -6,7 +6,6 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"strings"
 )
 
 type BlockRepository struct {
@@ -22,18 +21,14 @@ func (r *BlockRepository) List(filter store.BlockFilter) ([]*model.Block, error)
 	argIndex := 1
 	
 	if filter.Page != "" {
-		// Фильтруем блоки, у которых в массиве pages есть указанная страница
-		// Используем JSONB оператор @> для проверки наличия значения в массиве
-		// Или проверяем старое поле page для обратной совместимости
-		// Экранируем специальные символы в пути для JSON
-		escapedPage := strings.ReplaceAll(filter.Page, `\`, `\\`)
-		escapedPage = strings.ReplaceAll(escapedPage, `"`, `\"`)
-		pageJSON := fmt.Sprintf(`["%s"]`, escapedPage)
-		// Проверяем, что pages содержит нужную страницу (используем оператор @> для проверки наличия значения в массиве)
-		// ИЛИ проверяем старое поле page для обратной совместимости
-		// Также проверяем случай, когда pages может быть NULL или пустым массивом
-		query += ` WHERE ((COALESCE(pages::jsonb, '[]'::jsonb) @> $` + fmt.Sprintf("%d", argIndex) + `::jsonb) OR page = $` + fmt.Sprintf("%d", argIndex+1) + `)`
-		args = append(args, pageJSON, filter.Page)
+		query += ` WHERE (
+			EXISTS (
+				SELECT 1 
+				FROM jsonb_array_elements_text(COALESCE(pages::jsonb, '[]'::jsonb)) AS page_value
+				WHERE page_value = $` + fmt.Sprintf("%d", argIndex) + `
+			) OR page = $` + fmt.Sprintf("%d", argIndex+1) + `
+		)`
+		args = append(args, filter.Page, filter.Page)
 		argIndex += 2
 	}
 	query += " ORDER BY display_order ASC, created_at ASC"

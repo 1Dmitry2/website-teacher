@@ -494,15 +494,12 @@ func (s *server) handleProfile() gin.HandlerFunc {
 func (s *server) handlePublicPageBlocks() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		page := c.Param("page")
-		// Убираем начальный слеш, если он есть (из-за wildcard параметра)
 		if strings.HasPrefix(page, "/") {
 			page = page[1:]
 		}
-		// Если page пустой или равен "home", используем "/" для главной страницы
 		if page == "" || page == "home" {
 			page = "/"
 		} else {
-			// Для остальных путей добавляем начальный слеш, чтобы соответствовать формату в базе
 			page = "/" + page
 		}
 		blocks, err := s.store.Block().List(store.BlockFilter{Page: page})
@@ -693,7 +690,6 @@ func (s *server) handleAdminBlockCreate() gin.HandlerFunc {
 			return
 		}
 
-		// Используем display_order, если он передан, иначе order
 		order := req.DisplayOrder
 		if order == 0 && req.Order != 0 {
 			order = req.Order
@@ -755,7 +751,6 @@ func (s *server) handleAdminBlockUpdate() gin.HandlerFunc {
 		if req.Content != nil {
 			existing.Content = req.Content
 		}
-		// Используем display_order, если он передан, иначе order
 		if req.DisplayOrder != nil {
 			existing.Order = *req.DisplayOrder
 		} else if req.Order != nil {
@@ -1284,27 +1279,22 @@ func (s *server) ensureAdminUser(adminID int) (int, error) {
 func (s *server) handleAdminUpload() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		s.logger.Info("handleAdminUpload called")
-		// Получаем файл из формы
 		file, err := c.FormFile("file")
 		if err != nil {
 			s.error(c, http.StatusBadRequest, fmt.Errorf("file is required: %w", err))
 			return
 		}
 
-		// Проверяем, что это изображение или видео
 		contentType := file.Header.Get("Content-Type")
 		if !strings.HasPrefix(contentType, "image/") && !strings.HasPrefix(contentType, "video/") {
 			s.error(c, http.StatusBadRequest, errors.New("only image and video files are allowed"))
 			return
 		}
 
-		// Создаем директорию uploads, если её нет
 		if err := os.MkdirAll(s.uploadDir, 0755); err != nil {
 			s.error(c, http.StatusInternalServerError, fmt.Errorf("failed to create upload directory: %w", err))
 			return
 		}
-
-		// Генерируем уникальное имя файла
 		ext := filepath.Ext(file.Filename)
 		randomBytes := make([]byte, 16)
 		if _, err := rand.Read(randomBytes); err != nil {
