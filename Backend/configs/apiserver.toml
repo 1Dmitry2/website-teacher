@@ -2,3 +2,14 @@ bind_addr = ":8080"
 log_level = "debug"
 database_url = "host=localhost dbname=restapi_dev sslmode=disable"
 jwt_secret = "your-super-secret-key-minimum-32-characters-long-for-security"
+upload_dir = "./uploads"
+
+[smtp]
+host = "smtp.gmail.com"
+port = 587
+username = "your-email@gmail.com"
+password = "your-app-password"
+from = "your-email@gmail.com"
+
+[admin]
+reset_url = "http://localhost:5173/admin/reset?token="

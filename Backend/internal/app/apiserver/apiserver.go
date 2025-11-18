@@ -2,6 +2,7 @@ package apiserver
 
 import (
 	"backed-teacher/internal/app/store/sqlstore"
+	"backed-teacher/internal/mailer"
 	"database/sql"
 	"net/http"
 )
@@ -15,7 +16,19 @@ func Start(config *Config) error {
 	defer db.Close()
 
 	store := sqlstore.New(db)
-	srv := newServer(store, config.JWTSecret)
+
+	mailerService, err := mailer.New(mailer.Config{
+		Host:     config.SMTP.Host,
+		Port:     config.SMTP.Port,
+		Username: config.SMTP.Username,
+		Password: config.SMTP.Password,
+		From:     config.SMTP.From,
+	})
+	if err != nil {
+		return err
+	}
+
+	srv := newServer(store, config.JWTSecret, mailerService, config.Admin.ResetURL, config.UploadDir)
 	return http.ListenAndServe(config.BindAddr, srv)
 }
 

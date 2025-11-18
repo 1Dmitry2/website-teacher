@@ -2,19 +2,22 @@ package model
 
 import (
 	"github.com/go-playground/validator/v10"
-	"golang.org/x/crypto/bcrypt"
+	"time"
 )
 
 type User struct {
-	ID                int    `json:"id"`
-	Email             string `json:"email" validate:"required,email"`
-	Password          string `json:"password,omitempty" validate:"required,min=8"`
-	EncryptedPassword string `json:"-"`
+	ID                int       `json:"id"`
+	Email             string    `json:"email" validate:"required,email"`
+	Password          string    `json:"password,omitempty" validate:"required,min=8"`
+	EncryptedPassword string    `json:"-"`
+	IsAdmin           bool      `json:"is_admin"`
+	CreatedAt         time.Time `json:"created_at"`
+	UpdatedAt         time.Time `json:"updated_at"`
 }
 
 func (u *User) BeforeCreate() error {
 	if len(u.Password) > 0 {
-		enc, err := encryptString(u.Password)
+		enc, err := hashPassword(u.Password)
 		if err != nil {
 			return err
 		}
@@ -30,16 +33,9 @@ func (u *User) Validate() error {
 
 func (u *User) Sanitize() {
 	u.Password = ""
+	u.EncryptedPassword = ""
 }
 
 func (u *User) ComparePassword(password string) bool {
-	return bcrypt.CompareHashAndPassword([]byte(u.EncryptedPassword), []byte(password)) == nil
-}
-
-func encryptString(s string) (string, error) {
-	b, err := bcrypt.GenerateFromPassword([]byte(s), bcrypt.MinCost)
-	if err != nil {
-		return "", err
-	}
-	return string(b), nil
+	return compareHashedPassword(u.EncryptedPassword, password)
 }

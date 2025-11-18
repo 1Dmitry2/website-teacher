@@ -1,0 +1,3 @@
+ALTER TABLE posts
+    ADD COLUMN IF NOT EXISTS pages JSONB NOT NULL DEFAULT '[]'::jsonb;
+

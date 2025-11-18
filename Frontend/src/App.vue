@@ -9,15 +9,11 @@
 import { computed } from 'vue';
 import { useRoute } from 'vue-router';
 import NavBar from './components/NavBar.vue';
-import { authService } from './utils/auth';
 
 const route = useRoute();
 
 const showNavBar = computed(() => {
-  const hideOnPages = ['/user-login', '/register', '/admin-login'];
-  if (hideOnPages.includes(route.path)) {
-    return false;
-  }
-  return authService.isAuthenticated();
+  const hideOnPages = ['/user-login', '/register', '/admin-login', '/admin/forgot-password', '/admin/reset'];
+  return !hideOnPages.includes(route.path);
 });
 </script>

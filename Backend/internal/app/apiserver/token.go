@@ -2,6 +2,7 @@ package apiserver
 
 import (
 	"errors"
+	"strconv"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -11,21 +12,29 @@ var (
 	ErrInvalidToken = errors.New("invalid token")
 )
 
+type TokenScope string
+
+const (
+	TokenScopeUser  TokenScope = "user"
+	TokenScopeAdmin TokenScope = "admin"
+)
+
 type Claims struct {
-	UserID int `json:"user_id"`
+	SubjectID int        `json:"subject_id"`
+	Scope     TokenScope `json:"scope"`
 	jwt.RegisteredClaims
 }
 
-const (
-	tokenExpiration = 24 * time.Hour
-)
-
-func GenerateToken(userID int, secret string) (string, error) {
+func GenerateToken(subjectID int, scope TokenScope, secret string, expiration time.Duration) (string, error) {
+	now := time.Now()
 	claims := &Claims{
-		UserID: userID,
+		SubjectID: subjectID,
+		Scope:     scope,
 		RegisteredClaims: jwt.RegisteredClaims{
-			ExpiresAt: jwt.NewNumericDate(time.Now().Add(tokenExpiration)),
-			IssuedAt:  jwt.NewNumericDate(time.Now()),
+			Subject:   strconv.Itoa(subjectID),
+			IssuedAt:  jwt.NewNumericDate(now),
+			NotBefore: jwt.NewNumericDate(now),
+			ExpiresAt: jwt.NewNumericDate(now.Add(expiration)),
 		},
 	}
 
@@ -37,6 +46,7 @@ func GenerateToken(userID int, secret string) (string, error) {
 
 	return tokenString, nil
 }
+
 func ValidateToken(tokenString, secret string) (*Claims, error) {
 	claims := &Claims{}
 

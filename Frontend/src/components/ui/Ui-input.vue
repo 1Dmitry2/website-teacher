@@ -19,17 +19,21 @@
 
 <script setup lang="ts">
 interface UIInput{
-  type: 'text' | 'password' | 'email' | 'search',
+  type: 'text' | 'password' | 'email' | 'search' | 'number',
   placeholder?: string,
   disabled?: boolean,
   variant: 'primary' | 'secondary' | 'error' | 'success',
-  modelValue: string
+  modelValue: string | number
 
 }
 
 const props = defineProps<UIInput>();
-const emit = defineEmits(["update:modelValue"]);
+const emit = defineEmits<{
+  'update:modelValue': [value: string | number];
+}>();
 const onInput = (e: Event) => {
-  emit('update:modelValue', (e.target as HTMLInputElement).value);
+  const target = e.target as HTMLInputElement;
+  const value = props.type === 'number' ? (target.valueAsNumber || 0) : target.value;
+  emit('update:modelValue', value);
 }
 </script>

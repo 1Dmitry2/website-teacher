@@ -1,0 +1,11 @@
+DROP TABLE IF EXISTS comments;
+DROP TABLE IF EXISTS slider_items;
+DROP TABLE IF EXISTS gallery_items;
+DROP TABLE IF EXISTS posts;
+DROP TABLE IF EXISTS blocks;
+
+ALTER TABLE users
+    DROP COLUMN IF EXISTS is_admin,
+    DROP COLUMN IF EXISTS updated_at,
+    DROP COLUMN IF EXISTS created_at;
+
