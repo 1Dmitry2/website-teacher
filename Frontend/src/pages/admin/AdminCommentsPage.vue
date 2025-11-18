@@ -30,7 +30,6 @@
     <Transition name="modal">
       <div v-if="isReplyModalOpen" class="fixed inset-0 bg-gray-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4" @click.self="closeReplyModal">
         <div class="bg-white rounded-xl shadow-2xl max-w-md w-full max-h-[90vh] flex flex-col transform transition-all">
-          <!-- Заголовок (фиксированный) -->
           <div class="px-6 pt-6 pb-4 border-b border-gray-200 relative flex-shrink-0">
             <button
               @click="closeReplyModal"
@@ -44,11 +43,9 @@
             </button>
             <h2 class="text-2xl font-bold text-gray-900 pr-8">Ответить на комментарий</h2>
           </div>
-          <!-- Контент (прокручиваемый) -->
           <form @submit.prevent="submitReply" class="flex-1 overflow-y-auto px-6 py-4 space-y-4">
             <div><label class="block text-sm font-medium text-gray-700 mb-1">Ответ</label><textarea v-model="replyText" rows="4" class="w-full px-3 py-2 border border-gray-300 rounded-md" required></textarea></div>
           </form>
-          <!-- Кнопки (фиксированные) -->
           <div class="px-6 py-4 border-t border-gray-200 flex gap-2 justify-end flex-shrink-0">
             <ui-button type="button" variant="secondary" @click="closeReplyModal">Отмена</ui-button>
             <ui-button type="button" variant="primary" @click="submitReply">Отправить</ui-button>

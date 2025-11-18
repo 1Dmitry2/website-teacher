@@ -1,9 +1,9 @@
 <template>
   <div class="flex flex-col items-center justify-center min-h-screen bg-gray-100 px-4 py-12">
-    <div class="bg-white shadow-lg rounded-xl p-8 w-full max-w-md space-y-6">
+    <div class="bg-white shadow-lg rounded-xl p-6 sm:p-8 w-full max-w-md space-y-6">
       <div class="text-center space-y-2">
-        <h1 class="text-3xl font-bold text-gray-900">Вход в админ-панель</h1>
-        <p class="text-gray-500 text-sm">Используйте учетные данные администратора</p>
+        <h1 class="text-2xl sm:text-3xl font-bold text-gray-900">Вход в админ-панель</h1>
+        <p class="text-gray-500 text-xs sm:text-sm">Используйте учетные данные администратора</p>
       </div>
 
       <form class="space-y-4" @submit.prevent="handleSubmit">

@@ -31,30 +31,29 @@ const textAlignmentClass = computed(() => {
 });
 
 const titleClass = computed(() => {
-  if (!props.content) return 'text-2xl font-normal mb-4';
+  if (!props.content) return 'text-xl sm:text-2xl font-normal mb-3 sm:mb-4';
   const styleMap = {
-    regular: 'text-2xl font-normal mb-4',
-    bold: 'text-2xl font-bold mb-4',
-    italic: 'text-2xl font-normal italic mb-4',
-    heading: 'text-3xl font-bold mb-6',
+    regular: 'text-xl sm:text-2xl font-normal mb-3 sm:mb-4',
+    bold: 'text-xl sm:text-2xl font-bold mb-3 sm:mb-4',
+    italic: 'text-xl sm:text-2xl font-normal italic mb-3 sm:mb-4',
+    heading: 'text-2xl sm:text-3xl font-bold mb-4 sm:mb-6',
   };
-  return styleMap[props.content.style] || 'text-2xl font-normal mb-4';
+  return styleMap[props.content.style] || 'text-xl sm:text-2xl font-normal mb-3 sm:mb-4';
 });
 
 const textClass = computed(() => {
-  if (!props.content) return 'text-base font-normal';
+  if (!props.content) return 'text-sm sm:text-base font-normal';
   const styleMap = {
-    regular: 'text-base font-normal',
-    bold: 'text-base font-bold',
-    italic: 'text-base font-normal italic',
-    heading: 'text-lg font-semibold',
+    regular: 'text-sm sm:text-base font-normal',
+    bold: 'text-sm sm:text-base font-bold',
+    italic: 'text-sm sm:text-base font-normal italic',
+    heading: 'text-base sm:text-lg font-semibold',
   };
-  return styleMap[props.content.style] || 'text-base font-normal';
+  return styleMap[props.content.style] || 'text-sm sm:text-base font-normal';
 });
 
 const formattedText = computed(() => {
   if (!props.content?.text) return '';
-  // Простое форматирование: заменяем переносы строк на <br>
   return props.content.text.replace(/\n/g, '<br>');
 });
 </script>

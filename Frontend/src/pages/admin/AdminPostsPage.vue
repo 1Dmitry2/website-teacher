@@ -17,28 +17,30 @@
     </div>
 
     <div v-else class="bg-white rounded-xl shadow overflow-hidden">
-      <div class="overflow-x-auto">
+      <div class="overflow-x-auto -mx-4 sm:mx-0">
         <table class="min-w-full divide-y divide-gray-200">
           <thead class="bg-gray-50">
             <tr>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Заголовок</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Статус</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Дата</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Действия</th>
+              <th class="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Заголовок</th>
+              <th class="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden sm:table-cell">Статус</th>
+              <th class="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden md:table-cell">Дата</th>
+              <th class="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Действия</th>
             </tr>
           </thead>
           <tbody class="bg-white divide-y divide-gray-200">
-            <tr v-for="post in posts" :key="post.id">
-              <td class="px-6 py-4 text-sm text-gray-900">{{ post.title }}</td>
-              <td class="px-6 py-4 whitespace-nowrap">
+            <tr v-for="post in posts" :key="post.id" class="hover:bg-gray-50">
+              <td class="px-3 sm:px-6 py-4 text-xs sm:text-sm text-gray-900 max-w-xs truncate sm:max-w-none sm:truncate-none">{{ post.title }}</td>
+              <td class="px-3 sm:px-6 py-4 whitespace-nowrap hidden sm:table-cell">
                 <span :class="post.is_published ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'" class="px-2 py-1 text-xs font-semibold rounded-full">
                   {{ post.is_published ? 'Опубликован' : 'Черновик' }}
                 </span>
               </td>
-              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ formatDate(post.created_at) }}</td>
-              <td class="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
-                <button @click="editPost(post)" class="text-indigo-600 hover:text-indigo-900">Редактировать</button>
-                <button @click="deletePost(post.id)" class="text-red-600 hover:text-red-900">Удалить</button>
+              <td class="px-3 sm:px-6 py-4 whitespace-nowrap text-xs sm:text-sm text-gray-500 hidden md:table-cell">{{ formatDate(post.created_at) }}</td>
+              <td class="px-3 sm:px-6 py-4 whitespace-nowrap text-xs sm:text-sm font-medium">
+                <div class="flex flex-col sm:flex-row gap-1 sm:gap-2">
+                  <button @click="editPost(post)" class="text-indigo-600 hover:text-indigo-900 text-left sm:text-center">Редактировать</button>
+                  <button @click="deletePost(post.id)" class="text-red-600 hover:text-red-900 text-left sm:text-center">Удалить</button>
+                </div>
               </td>
             </tr>
           </tbody>
@@ -46,33 +48,30 @@
       </div>
     </div>
 
-    <!-- Create/Edit Modal -->
     <Transition name="modal">
       <div v-if="showCreateModal || editingPost" class="fixed inset-0 bg-gray-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4" @click.self="closeModal">
-        <div class="bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] flex flex-col transform transition-all">
-          <!-- Заголовок (фиксированный) -->
-          <div class="px-6 pt-6 pb-4 border-b border-gray-200 relative flex-shrink-0">
+        <div class="bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] flex flex-col transform transition-all m-4">
+          <div class="px-4 sm:px-6 pt-4 sm:pt-6 pb-4 border-b border-gray-200 relative flex-shrink-0">
             <button
               @click="closeModal"
-              class="absolute top-6 right-6 text-gray-400 hover:text-gray-600 transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 rounded-full p-1"
+              class="absolute top-4 right-4 sm:top-6 sm:right-6 text-gray-400 hover:text-gray-600 transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 rounded-full p-1"
               type="button"
               aria-label="Закрыть"
             >
-              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg class="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
               </svg>
             </button>
-            <h2 class="text-2xl font-bold text-gray-900 pr-8">{{ editingPost ? 'Редактировать пост' : 'Создать пост' }}</h2>
+            <h2 class="text-xl sm:text-2xl font-bold text-gray-900 pr-8">{{ editingPost ? 'Редактировать пост' : 'Создать пост' }}</h2>
           </div>
-          <!-- Контент (прокручиваемый) -->
-          <form @submit.prevent="savePost" class="flex-1 overflow-y-auto px-6 py-4 space-y-4">
+          <form @submit.prevent="savePost" class="flex-1 overflow-y-auto px-4 sm:px-6 py-4 space-y-4">
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">Заголовок</label>
               <ui-input v-model="formData.title" variant="primary" type="text" required />
             </div>
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">Содержание</label>
-              <textarea v-model="formData.content" rows="10" class="w-full px-3 py-2 border border-gray-300 rounded-md" required></textarea>
+              <textarea v-model="formData.content" rows="8" class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm sm:text-base resize-y" required></textarea>
             </div>
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">Изображения</label>
@@ -105,17 +104,91 @@
                     </div>
                   </div>
                 </div>
-                <div v-if="formData.images.length > 0" class="mt-2">
+                <div v-if="formData.images.length > 0" class="mt-2 space-y-3">
                   <div class="text-xs text-gray-600 mb-1">Загруженные изображения:</div>
-                  <div class="flex flex-wrap gap-2">
-                    <div v-for="(img, index) in formData.images" :key="index" class="relative group">
-                      <img :src="img" :alt="`Изображение ${index + 1}`" class="w-20 h-20 object-cover rounded border border-gray-300" />
+                  <div v-for="(img, index) in formData.images" :key="index" class="border border-gray-200 rounded p-2 space-y-2">
+                    <div class="flex items-center gap-2">
+                      <img :src="typeof img === 'string' ? img : img.url" :alt="`Изображение ${index + 1}`" class="w-20 h-20 object-cover rounded border border-gray-300" />
+                      <div class="flex-1">
+                        <label class="block text-xs font-medium text-gray-700 mb-1">Размер изображения</label>
+                        <select
+                          :value="(img as MediaItem).size || 'medium'"
+                          @change="formData.images[index] = { ...(img as MediaItem), size: ($event.target as HTMLSelectElement).value as MediaSize }"
+                          class="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:border-blue-500 focus:ring-1 focus:ring-blue-200"
+                        >
+                          <option value="small">Маленький</option>
+                          <option value="medium">Средний</option>
+                          <option value="large">Большой</option>
+                          <option value="xlarge">Крупный</option>
+                        </select>
+                      </div>
                       <button
                         type="button"
                         @click="removeImage(index)"
-                        class="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity"
+                        class="text-red-600 hover:text-red-800 text-sm font-medium"
                       >
-                        ×
+                        Удалить
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Видео</label>
+              <div class="space-y-2">
+                <div>
+                  <ui-input v-model="videosInput" variant="primary" type="text" placeholder="URL через запятую: https://example.com/video1.mp4, https://example.com/video2.mp4" />
+                </div>
+                <div class="flex items-center gap-2">
+                  <span class="text-sm text-gray-600">или</span>
+                </div>
+                <div>
+                  <input
+                    type="file"
+                    ref="videoInput"
+                    @change="handleVideoUpload"
+                    multiple
+                    accept="video/*"
+                    class="hidden"
+                  />
+                  <button
+                    type="button"
+                    @click="videoInput?.click()"
+                    class="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-md text-sm font-medium transition-colors"
+                  >
+                    Загрузить видео
+                  </button>
+                  <div v-if="uploadingVideos.length > 0" class="mt-2 space-y-1">
+                    <div v-for="(status, index) in uploadingVideos" :key="index" class="text-xs text-gray-600">
+                      {{ status }}
+                    </div>
+                  </div>
+                </div>
+                <div v-if="formData.videos.length > 0" class="mt-2 space-y-3">
+                  <div class="text-xs text-gray-600 mb-1">Загруженные видео:</div>
+                  <div v-for="(video, index) in formData.videos" :key="index" class="border border-gray-200 rounded p-2 space-y-2">
+                    <div class="flex items-center gap-2">
+                      <video :src="typeof video === 'string' ? video : video.url" class="w-20 h-20 object-cover rounded border border-gray-300" muted></video>
+                      <div class="flex-1">
+                        <label class="block text-xs font-medium text-gray-700 mb-1">Размер видео</label>
+                        <select
+                          :value="(video as MediaItem).size || 'medium'"
+                          @change="formData.videos[index] = { ...(video as MediaItem), size: ($event.target as HTMLSelectElement).value as MediaSize }"
+                          class="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:border-blue-500 focus:ring-1 focus:ring-blue-200"
+                        >
+                          <option value="small">Маленький</option>
+                          <option value="medium">Средний</option>
+                          <option value="large">Большой</option>
+                          <option value="xlarge">Крупный</option>
+                        </select>
+                      </div>
+                      <button
+                        type="button"
+                        @click="removeVideo(index)"
+                        class="text-red-600 hover:text-red-800 text-sm font-medium"
+                      >
+                        Удалить
                       </button>
                     </div>
                   </div>
@@ -130,13 +203,50 @@
                 @update:selected-pages="formData.pages = $event"
               />
             </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Выравнивание поста</label>
+              <select 
+                v-model="formData.alignment" 
+                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-all text-sm sm:text-base"
+              >
+                <option value="full-width">На всю ширину</option>
+                <option value="left">Слева</option>
+                <option value="center">По центру</option>
+                <option value="right">Справа</option>
+              </select>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Расположение заголовка</label>
+                <select 
+                  v-model="formData.title_position" 
+                  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-all text-sm sm:text-base"
+                >
+                  <option value="top">Сверху</option>
+                  <option value="bottom">Снизу</option>
+                  <option value="left">Слева</option>
+                  <option value="right">Справа</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Расположение содержания</label>
+                <select 
+                  v-model="formData.content_position" 
+                  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-all text-sm sm:text-base"
+                >
+                  <option value="top">Сверху</option>
+                  <option value="bottom">Снизу</option>
+                  <option value="left">Слева</option>
+                  <option value="right">Справа</option>
+                </select>
+              </div>
+            </div>
             <div class="flex items-center gap-2">
               <input type="checkbox" v-model="formData.is_published" id="published" class="w-4 h-4 text-indigo-600 border-gray-300 rounded" />
               <label for="published" class="text-sm font-medium text-gray-700">Опубликовать</label>
             </div>
           </form>
-          <!-- Кнопки (фиксированные) -->
-          <div class="px-6 py-4 border-t border-gray-200 flex gap-2 justify-end flex-shrink-0">
+          <div class="px-4 sm:px-6 py-4 border-t border-gray-200 flex flex-col sm:flex-row gap-2 justify-end flex-shrink-0">
             <ui-button type="button" variant="secondary" @click="closeModal">Отмена</ui-button>
             <ui-button type="button" variant="primary" @click="savePost">Сохранить</ui-button>
           </div>
@@ -154,6 +264,7 @@ import UiInput from '../../components/ui/Ui-input.vue';
 import PageSelector from '../../components/ui/PageSelector.vue';
 import { adminApi, type Post } from '../../api/admin';
 import { adminAuthService } from '../../utils/adminAuth';
+import type { MediaItem, MediaSize } from '../../api/client';
 
 const router = useRouter();
 const posts = ref<Post[]>([]);
@@ -162,9 +273,10 @@ const error = ref('');
 const showCreateModal = ref(false);
 const editingPost = ref<Post | null>(null);
 const fileInput = ref<HTMLInputElement | null>(null);
+const videoInput = ref<HTMLInputElement | null>(null);
 const uploadingImages = ref<string[]>([]);
+const uploadingVideos = ref<string[]>([]);
 
-// Маппинг роутов на описания
 const routeDescriptions: Record<string, string> = {
   '/': 'Главная страница (Новости)',
   '/about': 'О себе',
@@ -213,15 +325,26 @@ const availableRoutes = computed(() => {
 const formData = ref({
   title: '',
   content: '',
-  images: [] as string[],
+  images: [] as MediaItem[],
+  videos: [] as MediaItem[],
   pages: [] as string[],
   is_published: false,
+  alignment: 'full-width' as 'left' | 'center' | 'right' | 'full-width',
+  title_position: 'top' as 'top' | 'bottom' | 'left' | 'right',
+  content_position: 'bottom' as 'top' | 'bottom' | 'left' | 'right',
 });
 
 const imagesInput = computed({
-  get: () => formData.value.images.join(', '),
+  get: () => formData.value.images.map(img => typeof img === 'string' ? img : img.url).join(', '),
   set: (val) => {
-    formData.value.images = val.split(',').map(s => s.trim()).filter(Boolean);
+    formData.value.images = val.split(',').map(s => s.trim()).filter(Boolean).map(url => ({ url, size: 'medium' as MediaSize }));
+  },
+});
+
+const videosInput = computed({
+  get: () => formData.value.videos.map(vid => typeof vid === 'string' ? vid : vid.url).join(', '),
+  set: (val) => {
+    formData.value.videos = val.split(',').map(s => s.trim()).filter(Boolean).map(url => ({ url, size: 'medium' as MediaSize }));
   },
 });
 
@@ -245,14 +368,22 @@ const fetchPosts = async () => {
   }
 };
 
+const normalizeMedia = (media: (string | MediaItem)[]): MediaItem[] => {
+  return media.map(item => typeof item === 'string' ? { url: item, size: 'medium' as MediaSize } : item);
+};
+
 const editPost = (post: Post) => {
   editingPost.value = post;
   formData.value = {
     title: post.title,
     content: post.content,
-    images: post.images || [],
+    images: normalizeMedia(post.images || []),
+    videos: normalizeMedia(post.videos || []),
     pages: post.pages || [],
     is_published: post.is_published,
+    alignment: post.alignment || 'full-width',
+    title_position: post.title_position || 'top',
+    content_position: post.content_position || 'bottom',
   };
 };
 
@@ -268,10 +399,16 @@ const deletePost = async (id: string) => {
 
 const savePost = async () => {
   try {
+    const postData = {
+      ...formData.value,
+      images: formData.value.images.map(img => typeof img === 'string' ? img : img.url),
+      videos: formData.value.videos.map(vid => typeof vid === 'string' ? vid : vid.url),
+    };
+    
     if (editingPost.value) {
-      await adminApi.updatePost(editingPost.value.id, formData.value);
+      await adminApi.updatePost(editingPost.value.id, postData);
     } else {
-      await adminApi.createPost(formData.value);
+      await adminApi.createPost(postData);
     }
     closeModal();
     await fetchPosts();
@@ -289,12 +426,14 @@ const handleFileUpload = async (event: Event) => {
   
   for (let i = 0; i < files.length; i++) {
     const file = files[i];
+    if (!file) continue;
     uploadingImages.value.push(`Загрузка ${file.name}...`);
     
     try {
       const url = await adminApi.uploadFile(file);
-      if (!formData.value.images.includes(url)) {
-        formData.value.images.push(url);
+      const exists = formData.value.images.some(img => (typeof img === 'string' ? img : img.url) === url);
+      if (!exists) {
+        formData.value.images.push({ url, size: 'medium' as MediaSize });
       }
       uploadingImages.value[i] = `✓ ${file.name} загружен`;
     } catch (error) {
@@ -312,20 +451,63 @@ const handleFileUpload = async (event: Event) => {
   }
 };
 
+const handleVideoUpload = async (event: Event) => {
+  const target = event.target as HTMLInputElement;
+  const files = target.files;
+  if (!files || files.length === 0) return;
+
+  uploadingVideos.value = [];
+  
+  for (let i = 0; i < files.length; i++) {
+    const file = files[i];
+    if (!file) continue;
+    uploadingVideos.value.push(`Загрузка ${file.name}...`);
+    
+    try {
+      const url = await adminApi.uploadFile(file);
+      const exists = formData.value.videos.some(vid => (typeof vid === 'string' ? vid : vid.url) === url);
+      if (!exists) {
+        formData.value.videos.push({ url, size: 'medium' as MediaSize });
+      }
+      uploadingVideos.value[i] = `✓ ${file.name} загружен`;
+    } catch (error) {
+      uploadingVideos.value[i] = `✗ Ошибка загрузки ${file.name}`;
+      console.error('Error uploading file:', error);
+    }
+  }
+  
+  setTimeout(() => {
+    uploadingVideos.value = [];
+  }, 3000);
+  
+  if (target) {
+    target.value = '';
+  }
+};
+
 const removeImage = (index: number) => {
   formData.value.images.splice(index, 1);
+};
+
+const removeVideo = (index: number) => {
+  formData.value.videos.splice(index, 1);
 };
 
 const closeModal = () => {
   showCreateModal.value = false;
   editingPost.value = null;
   uploadingImages.value = [];
+  uploadingVideos.value = [];
   formData.value = {
     title: '',
     content: '',
     images: [],
+    videos: [],
     pages: [],
     is_published: false,
+    alignment: 'full-width',
+    title_position: 'top',
+    content_position: 'bottom',
   };
 };
 

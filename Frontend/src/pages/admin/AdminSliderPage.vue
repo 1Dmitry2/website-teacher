@@ -37,7 +37,6 @@
     <Transition name="modal">
       <div v-if="showCreateModal || editingItem" class="fixed inset-0 bg-gray-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4" @click.self="closeModal">
         <div class="bg-white rounded-xl shadow-2xl max-w-md w-full max-h-[90vh] flex flex-col transform transition-all">
-          <!-- Заголовок (фиксированный) -->
           <div class="px-6 pt-6 pb-4 border-b border-gray-200 relative flex-shrink-0">
             <button
               @click="closeModal"
@@ -51,7 +50,6 @@
             </button>
             <h2 class="text-2xl font-bold text-gray-900 pr-8">{{ editingItem ? 'Редактировать' : 'Добавить элемент' }}</h2>
           </div>
-          <!-- Контент (прокручиваемый) -->
           <form @submit.prevent="saveItem" class="flex-1 overflow-y-auto px-6 py-4 space-y-4">
             <div><label class="block text-sm font-medium text-gray-700 mb-1">URL изображения</label><ui-input v-model="formData.image_url" variant="primary" type="text" required /></div>
             <div><label class="block text-sm font-medium text-gray-700 mb-1">Название</label><ui-input v-model="formData.title" variant="primary" type="text" /></div>
@@ -75,7 +73,6 @@
               />
             </div>
           </form>
-          <!-- Кнопки (фиксированные) -->
           <div class="px-6 py-4 border-t border-gray-200 flex gap-2 justify-end flex-shrink-0">
             <ui-button type="button" variant="secondary" @click="closeModal">Отмена</ui-button>
             <ui-button type="button" variant="primary" @click="saveItem">Сохранить</ui-button>
@@ -102,7 +99,6 @@ const error = ref('');
 const showCreateModal = ref(false);
 const editingItem = ref<SliderItem | null>(null);
 
-// Маппинг роутов на описания
 const routeDescriptions: Record<string, string> = {
   '/': 'Главная страница (Новости)',
   '/about': 'О себе',

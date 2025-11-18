@@ -18,12 +18,11 @@ export interface ResetPasswordPayload {
   newPassword: string;
 }
 
-// CMS Types
 export interface Block {
   id: string;
   page: string;
   pages: string[];
-  type: 'text' | 'slider' | 'gallery' | 'video';
+  type: 'text' | 'slider' | 'gallery' | 'video' | 'text-with-image';
   content: Record<string, any>;
   display_order: number;
   created_at: string;
@@ -35,8 +34,12 @@ export interface Post {
   title: string;
   content: string;
   images: string[];
+  videos?: string[];
   pages: string[];
   is_published: boolean;
+  alignment?: 'left' | 'center' | 'right' | 'full-width';
+  title_position?: 'top' | 'bottom' | 'left' | 'right';
+  content_position?: 'top' | 'bottom' | 'left' | 'right';
   created_at: string;
   updated_at: string;
 }
@@ -120,7 +123,6 @@ class AdminApiClient extends ApiClient {
     return response.data!;
   }
 
-  // Blocks
   async getBlocks(): Promise<Block[]> {
     const response = await this.request<Block[]>('/admin/blocks', { method: 'GET' });
     return response.data || [];
@@ -153,7 +155,6 @@ class AdminApiClient extends ApiClient {
     });
   }
 
-  // Posts
   async getPosts(): Promise<Post[]> {
     const response = await this.request<Post[]>('/admin/posts', { method: 'GET' });
     return response.data || [];
@@ -184,7 +185,6 @@ class AdminApiClient extends ApiClient {
     await this.request(`/admin/posts/${id}`, { method: 'DELETE' });
   }
 
-  // Gallery
   async getGallery(): Promise<GalleryItem[]> {
     const response = await this.request<GalleryItem[]>('/admin/gallery', { method: 'GET' });
     return response.data || [];
@@ -210,7 +210,6 @@ class AdminApiClient extends ApiClient {
     await this.request(`/admin/gallery/${id}`, { method: 'DELETE' });
   }
 
-  // Slider
   async getSlider(): Promise<SliderItem[]> {
     const response = await this.request<SliderItem[]>('/admin/slider', { method: 'GET' });
     return response.data || [];
@@ -243,7 +242,6 @@ class AdminApiClient extends ApiClient {
     });
   }
 
-  // Comments
   async getComments(): Promise<Comment[]> {
     const response = await this.request<Comment[]>('/admin/comments', { method: 'GET' });
     return response.data || [];
@@ -261,13 +259,25 @@ class AdminApiClient extends ApiClient {
     await this.request(`/admin/comments/${id}`, { method: 'DELETE' });
   }
 
-  // Users
   async getUsers(): Promise<User[]> {
     const response = await this.request<User[]>('/admin/users', { method: 'GET' });
     return response.data || [];
   }
 
-  // File Upload
+  async getUserById(userId: number): Promise<User & { comments_count?: number }> {
+    const response = await this.request<User & { comments_count?: number }>(`/admin/users/${userId}`, {
+      method: 'GET',
+    });
+    return response.data!;
+  }
+
+  async banUser(userId: number, banned: boolean): Promise<void> {
+    await this.request(`/admin/users/${userId}/ban`, {
+      method: 'PATCH',
+      body: JSON.stringify({ banned }),
+    });
+  }
+
   async uploadFile(file: File): Promise<string> {
     const token = this.getToken();
     if (!token) {
@@ -300,7 +310,6 @@ class AdminApiClient extends ApiClient {
     }
 
     const data = await response.json();
-    // Сервер оборачивает ответ в { message: "ok", data: { url: "..." } }
     return data.data?.url || data.url || '';
   }
 }

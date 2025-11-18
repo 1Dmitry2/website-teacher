@@ -13,6 +13,7 @@
               <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16" />
             </svg>
           </button>
+          <AccessibilityToggle />
           <ul class="hidden md:flex items-center gap-4 flex-wrap">
             <li v-for="item in navigationItems" :key="item.title" class="relative">
               <router-link
@@ -95,16 +96,21 @@
         <div class="flex flex-wrap items-end gap-1.5 sm:gap-2 justify-end text-right">
           <template v-if="isAuthenticated">
             <div class="flex items-center gap-2">
-              <div class="flex flex-col text-right leading-tight">
-                <span class="text-gray-700 text-xs sm:text-sm md:text-base truncate max-w-[200px] sm:max-w-[240px] md:max-w-none">
-                  {{ accountEmail }}
-                  <template v-if="isAdminSession">
-                    <span class="text-[11px] sm:text-xs uppercase tracking-wide text-indigo-600 font-semibold">
-                      (ADMIN)
-                    </span>
-                  </template>
+              <button
+                @click="showProfileModal = true"
+                class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-gray-100 transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                type="button"
+                :title="accountEmail"
+              >
+                <div class="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center flex-shrink-0">
+                  <span class="text-lg font-bold text-indigo-600 uppercase">
+                    {{ getEmailInitial(accountEmail) }}
+                  </span>
+                </div>
+                <span v-if="isAdminSession" class="text-xs sm:text-sm font-semibold text-indigo-600 hidden sm:inline">
+                  (ADMIN)
                 </span>
-              </div>
+              </button>
               <ui-button
                 variant="primary"
                 type="button"
@@ -121,6 +127,13 @@
             </ui-button>
           </template>
         </div>
+        
+        <UserProfileModal
+          :is-open="showProfileModal"
+          :email="accountEmail"
+          :is-admin="isAdminSession"
+          @close="showProfileModal = false"
+        />
       </div>
 
       <div v-if="isMobileMenuOpen" class="md:hidden border-t border-gray-200 pt-4 pb-6">
@@ -206,6 +219,8 @@
 import { ref, onMounted, watch, onBeforeUnmount, computed } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import UiButton from './ui/Ui-button.vue';
+import AccessibilityToggle from './AccessibilityToggle.vue';
+import UserProfileModal from './UserProfileModal.vue';
 import { authService } from '../utils/auth';
 import { adminAuthService } from '../utils/adminAuth';
 import { apiClient } from '../api/client';
@@ -231,8 +246,13 @@ const accountEmail = ref('');
 const isMobileMenuOpen = ref(false);
 const activeDropdown = ref<string | null>(null);
 const navRef = ref<HTMLElement | null>(null);
+const showProfileModal = ref(false);
 const isAuthenticated = computed(() => authRole.value !== 'guest');
 const isAdminSession = computed(() => authRole.value === 'admin');
+
+const getEmailInitial = (email: string) => {
+  return email ? email.charAt(0).toUpperCase() : '?';
+};
 
 const baseNavigation: NavItem[] = [
   {

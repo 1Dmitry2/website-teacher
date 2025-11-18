@@ -1,6 +1,6 @@
 <template>
-  <div class="block-video mb-8">
-    <div class="relative w-full" style="padding-bottom: 56.25%;">
+  <div class="block-video mb-8" :class="alignmentClass">
+    <div class="relative" :class="containerClass" :style="containerStyle">
       <iframe
         v-if="isYouTubeUrl(content.url)"
         :src="getYouTubeEmbedUrl(content.url)"
@@ -21,16 +21,78 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue';
 import { API_BASE_URL } from '../../api/client';
+
+import type { MediaSize } from '../../api/client';
 
 export interface VideoBlockContent {
   url: string;
   autoplay: boolean;
+  alignment?: 'left' | 'center' | 'right' | 'full-width';
+  maxWidth?: number;
+  size?: MediaSize;
 }
 
 const props = defineProps<{
   content: VideoBlockContent;
 }>();
+
+const alignmentClass = computed(() => {
+  if (!props.content?.alignment || props.content.alignment === 'full-width') {
+    return 'w-full';
+  }
+  const alignmentMap = {
+    left: 'flex justify-start',
+    center: 'flex justify-center',
+    right: 'flex justify-end',
+  };
+  return alignmentMap[props.content.alignment] || 'w-full';
+});
+
+const containerClass = computed(() => {
+  if (props.content?.alignment === 'full-width') {
+    return 'w-full';
+  }
+  return `${getSizeClass()} w-full`;
+});
+
+const getSizeClass = (): string => {
+  const size = props.content?.size || 'medium';
+  const sizeMap: Record<MediaSize, string> = {
+    small: 'max-w-xs',
+    medium: 'max-w-md',
+    large: 'max-w-2xl',
+    xlarge: 'max-w-4xl',
+  };
+  return sizeMap[size] || sizeMap.medium;
+};
+
+const containerStyle = computed(() => {
+  const maxWidth = props.content?.maxWidth;
+  const size = props.content?.size || 'medium';
+  
+  let width = maxWidth;
+  if (!width && props.content?.alignment && props.content.alignment !== 'full-width') {
+    const sizeWidthMap: Record<MediaSize, number> = {
+      small: 320,
+      medium: 448,
+      large: 672,
+      xlarge: 896,
+    };
+    width = sizeWidthMap[size] || sizeWidthMap.medium;
+  }
+  
+  if (width && props.content?.alignment && props.content.alignment !== 'full-width') {
+    return {
+      maxWidth: `${width}px`,
+      paddingBottom: '56.25%',
+    };
+  }
+  return {
+    paddingBottom: '56.25%',
+  };
+});
 
 const isYouTubeUrl = (url: string): boolean => {
   if (!url) return false;

@@ -17,24 +17,26 @@
     </div>
 
     <div v-else class="bg-white rounded-xl shadow overflow-hidden">
-      <div class="overflow-x-auto">
+      <div class="overflow-x-auto -mx-4 sm:mx-0">
         <table class="min-w-full divide-y divide-gray-200">
           <thead class="bg-gray-50">
             <tr>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Страница</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Тип</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Порядок</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Действия</th>
+              <th class="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Страница</th>
+              <th class="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden sm:table-cell">Тип</th>
+              <th class="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden md:table-cell">Порядок</th>
+              <th class="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Действия</th>
             </tr>
           </thead>
           <tbody class="bg-white divide-y divide-gray-200">
-            <tr v-for="block in blocks" :key="block.id">
-              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ block.page }}</td>
-              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ block.type }}</td>
-              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ block.display_order }}</td>
-              <td class="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
-                <button @click="editBlock(block)" class="text-indigo-600 hover:text-indigo-900">Редактировать</button>
-                <button @click="deleteBlock(block.id)" class="text-red-600 hover:text-red-900">Удалить</button>
+            <tr v-for="block in blocks" :key="block.id" class="hover:bg-gray-50">
+              <td class="px-3 sm:px-6 py-4 whitespace-nowrap text-xs sm:text-sm text-gray-900 max-w-xs truncate sm:max-w-none sm:truncate-none">{{ block.page }}</td>
+              <td class="px-3 sm:px-6 py-4 whitespace-nowrap text-xs sm:text-sm text-gray-500 hidden sm:table-cell">{{ block.type }}</td>
+              <td class="px-3 sm:px-6 py-4 whitespace-nowrap text-xs sm:text-sm text-gray-500 hidden md:table-cell">{{ block.display_order }}</td>
+              <td class="px-3 sm:px-6 py-4 whitespace-nowrap text-xs sm:text-sm font-medium">
+                <div class="flex flex-col sm:flex-row gap-1 sm:gap-2">
+                  <button @click="editBlock(block)" class="text-indigo-600 hover:text-indigo-900 text-left sm:text-center">Редактировать</button>
+                  <button @click="deleteBlock(block.id)" class="text-red-600 hover:text-red-900 text-left sm:text-center">Удалить</button>
+                </div>
               </td>
             </tr>
           </tbody>
@@ -42,31 +44,27 @@
       </div>
     </div>
 
-    <!-- Create/Edit Modal -->
     <Transition name="modal">
       <div v-if="showCreateModal || editingBlock" class="fixed inset-0 bg-gray-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4" @click.self="closeModal">
-        <div class="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] flex flex-col transform transition-all">
-          <!-- Заголовок (фиксированный) -->
-          <div class="px-6 pt-6 pb-4 border-b border-gray-200 relative flex-shrink-0">
+        <div class="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] flex flex-col transform transition-all m-4">
+          <div class="px-4 sm:px-6 pt-4 sm:pt-6 pb-4 border-b border-gray-200 relative flex-shrink-0">
             <button
               @click="closeModal"
-              class="absolute top-6 right-6 text-gray-400 hover:text-gray-600 transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 rounded-full p-1"
+              class="absolute top-4 right-4 sm:top-6 sm:right-6 text-gray-400 hover:text-gray-600 transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 rounded-full p-1"
               type="button"
               aria-label="Закрыть"
             >
-              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg class="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
               </svg>
             </button>
-            <h2 class="text-2xl font-bold text-gray-900 pr-8">{{ editingBlock ? 'Редактировать блок' : 'Создать блок' }}</h2>
+            <h2 class="text-xl sm:text-2xl font-bold text-gray-900 pr-8">{{ editingBlock ? 'Редактировать блок' : 'Создать блок' }}</h2>
           </div>
           
-          <!-- Контент (прокручиваемый) -->
-          <div class="flex-1 overflow-y-auto px-6 py-4">
-            <!-- Step 1: Выбор типа блока (только при создании) -->
+          <div class="flex-1 overflow-y-auto px-4 sm:px-6 py-4">
             <div v-if="!editingBlock && !selectedBlockType" class="space-y-4">
-              <p class="text-gray-600 mb-4">Выберите тип блока:</p>
-              <div class="grid grid-cols-2 gap-3">
+              <p class="text-gray-600 mb-4 text-sm sm:text-base">Выберите тип блока:</p>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <button
                   type="button"
                   @click="selectBlockType('text')"
@@ -99,10 +97,17 @@
                   <div class="text-2xl mb-2">🎞</div>
                   <div class="font-medium text-gray-900">Видео</div>
                 </button>
+                <button
+                  type="button"
+                  @click="selectBlockType('text-with-image')"
+                  class="p-4 border-2 border-gray-300 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition-all text-left"
+                >
+                  <div class="text-2xl mb-2">📄</div>
+                  <div class="font-medium text-gray-900">Текст с изображением</div>
+                </button>
               </div>
             </div>
 
-            <!-- Step 2: Форма блока -->
             <form v-else @submit.prevent="saveBlock" class="space-y-4">
               <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Страницы для отображения</label>
@@ -123,39 +128,38 @@
                 />
               </div>
               
-              <!-- Формы для разных типов блоков -->
               <div class="border-t border-gray-200 pt-4 mt-4">
                 <h3 class="text-lg font-semibold text-gray-900 mb-4">Содержимое блока</h3>
                 
-                <!-- Текстовый блок -->
                 <BlockFormText 
                   v-if="formData.type === 'text' && blockContent"
                   v-model="blockContent as TextBlockContent"
                 />
                 
-                <!-- Слайдер -->
                 <BlockFormSlider 
                   v-if="formData.type === 'slider' && blockContent"
                   v-model="blockContent as SliderBlockContent"
                 />
                 
-                <!-- Галерея -->
                 <BlockFormGallery 
                   v-if="formData.type === 'gallery' && blockContent"
                   v-model="blockContent as GalleryBlockContent"
                 />
                 
-                <!-- Видео -->
                 <BlockFormVideo 
                   v-if="formData.type === 'video' && blockContent"
                   v-model="blockContent as VideoBlockContent"
+                />
+                
+                <BlockFormTextWithImage 
+                  v-if="formData.type === 'text-with-image' && blockContent"
+                  v-model="blockContent as TextWithImageBlockContent"
                 />
               </div>
             </form>
           </div>
           
-          <!-- Кнопки (фиксированные) -->
-          <div class="px-6 py-4 border-t border-gray-200 flex gap-2 justify-end flex-shrink-0">
+          <div class="px-4 sm:px-6 py-4 border-t border-gray-200 flex flex-col sm:flex-row gap-2 justify-end flex-shrink-0">
             <ui-button v-if="!editingBlock && !selectedBlockType" type="button" variant="secondary" @click="closeModal">Отмена</ui-button>
             <template v-else>
               <ui-button type="button" variant="secondary" @click="closeModal">Отмена</ui-button>
@@ -177,6 +181,7 @@ import BlockFormText from '../../components/blocks/BlockFormText.vue';
 import BlockFormSlider from '../../components/blocks/BlockFormSlider.vue';
 import BlockFormGallery from '../../components/blocks/BlockFormGallery.vue';
 import BlockFormVideo from '../../components/blocks/BlockFormVideo.vue';
+import BlockFormTextWithImage from '../../components/blocks/BlockFormTextWithImage.vue';
 import PageSelector from '../../components/ui/PageSelector.vue';
 import { adminApi, type Block } from '../../api/admin';
 import { adminAuthService } from '../../utils/adminAuth';
@@ -184,6 +189,7 @@ import type { TextBlockContent } from '../../components/blocks/BlockFormText.vue
 import type { SliderBlockContent } from '../../components/blocks/BlockFormSlider.vue';
 import type { GalleryBlockContent } from '../../components/blocks/BlockFormGallery.vue';
 import type { VideoBlockContent } from '../../components/blocks/BlockFormVideo.vue';
+import type { TextWithImageBlockContent } from '../../components/blocks/BlockFormTextWithImage.vue';
 
 const router = useRouter();
 const blocks = ref<Block[]>([]);
@@ -192,9 +198,8 @@ const error = ref('');
 const showCreateModal = ref(false);
 const editingBlock = ref<Block | null>(null);
 const selectedBlockType = ref<Block['type'] | null>(null);
-const blockContent = ref<TextBlockContent | SliderBlockContent | GalleryBlockContent | VideoBlockContent | null>(null);
+const blockContent = ref<TextBlockContent | SliderBlockContent | GalleryBlockContent | VideoBlockContent | TextWithImageBlockContent | null>(null);
 
-// Маппинг роутов на описания
 const routeDescriptions: Record<string, string> = {
   '/': 'Главная страница (Новости)',
   '/about': 'О себе',
@@ -273,8 +278,22 @@ const initializeBlockContent = (type: Block['type'], existingContent?: Record<st
     case 'video':
       blockContent.value = {
         url: content.url || '',
-        autoplay: content.autoplay === true || content.autoplay === 'true',
+        autoplay: content.autoplay ?? false,
+        alignment: content.alignment || 'full-width',
+        maxWidth: content.maxWidth,
+        size: content.size || 'medium',
       } as VideoBlockContent;
+      break;
+    case 'text-with-image':
+      blockContent.value = {
+        title: content.title || '',
+        text: content.text || '',
+        image: content.image || '',
+        textPosition: content.textPosition || 'right',
+        alignment: content.alignment || 'left',
+        style: content.style || 'regular',
+        imageSize: content.imageSize || 'medium',
+      } as TextWithImageBlockContent;
       break;
   }
 };
@@ -317,7 +336,6 @@ const editBlock = (block: Block) => {
     display_order: block.display_order || 1,
     content: block.content,
   };
-  // Инициализируем контент для редактирования
   initializeBlockContent(block.type, block.content);
 };
 
@@ -337,7 +355,7 @@ const saveBlock = async () => {
       formData.value.content = blockContent.value as Record<string, any>;
     }
     
-    if (formData.value.pages && formData.value.pages.length > 0) {
+    if (formData.value.pages && formData.value.pages.length > 0 && formData.value.pages[0]) {
       formData.value.page = formData.value.pages[0];
     } else {
       formData.value.page = '';

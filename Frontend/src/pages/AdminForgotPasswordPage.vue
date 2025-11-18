@@ -1,9 +1,9 @@
 <template>
   <div class="flex flex-col items-center justify-center min-h-screen bg-gray-100 px-4 py-12">
-    <div class="bg-white shadow-lg rounded-xl p-8 w-full max-w-md space-y-5">
+    <div class="bg-white shadow-lg rounded-xl p-6 sm:p-8 w-full max-w-md space-y-5">
       <div class="text-center space-y-2">
-        <h1 class="text-2xl font-bold text-gray-900">Восстановление пароля</h1>
-        <p class="text-sm text-gray-500">
+        <h1 class="text-xl sm:text-2xl font-bold text-gray-900">Восстановление пароля</h1>
+        <p class="text-xs sm:text-sm text-gray-500">
           Укажите email, на который отправим ссылку для сброса пароля
         </p>
       </div>
@@ -17,7 +17,7 @@
           :disabled="loading"
         />
 
-        <div v-if="message" :class="messageClass">
+        <div v-if="message" :class="messageClass" class="break-words">
           {{ message }}
         </div>
 

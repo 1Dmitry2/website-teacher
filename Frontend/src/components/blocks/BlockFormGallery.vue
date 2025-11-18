@@ -78,11 +78,54 @@
             placeholder="Подпись к фотографии"
           />
         </div>
+        
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Размер изображения</label>
+          <select 
+            v-model="image.size" 
+            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all"
+          >
+            <option value="small">Маленький</option>
+            <option value="medium">Средний</option>
+            <option value="large">Большой</option>
+            <option value="xlarge">Крупный</option>
+          </select>
+        </div>
       </div>
       
       <p v-if="formData.images.length === 0" class="text-sm text-gray-500 text-center py-4">
         Нет фотографий. Нажмите "+ Добавить фотографию" чтобы начать.
       </p>
+    </div>
+    
+    <div>
+      <label class="block text-sm font-medium text-gray-700 mb-1">Тип отображения</label>
+      <select 
+        v-model="formData.layout" 
+        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all"
+      >
+        <option value="grid">Сетка (Grid)</option>
+        <option value="flex">Гибкая сетка (Flex)</option>
+        <option value="single-row">Одна строка (горизонтальная прокрутка)</option>
+      </select>
+    </div>
+    
+    <div v-if="formData.layout === 'grid' || formData.layout === 'flex'">
+      <label class="block text-sm font-medium text-gray-700 mb-1">
+        Количество колонок
+        <span v-if="formData.layout === 'flex'" class="text-gray-500 text-xs">(элементов в строке)</span>
+      </label>
+      <select 
+        v-model.number="formData.columns" 
+        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all"
+      >
+        <option :value="1">1 колонка</option>
+        <option :value="2">2 колонки</option>
+        <option :value="3">3 колонки</option>
+        <option :value="4">4 колонки</option>
+        <option :value="5">5 колонок</option>
+        <option :value="6">6 колонок</option>
+      </select>
     </div>
   </div>
 </template>
@@ -93,13 +136,18 @@ import UiInput from '../ui/Ui-input.vue';
 import UiButton from '../ui/Ui-button.vue';
 import { adminApi } from '../../api/admin';
 
+import type { MediaSize } from '../../api/client';
+
 export interface GalleryImage {
   src: string;
   caption: string;
+  size?: MediaSize;
 }
 
 export interface GalleryBlockContent {
   images: GalleryImage[];
+  layout?: 'grid' | 'flex' | 'single-row';
+  columns?: number;
 }
 
 const props = defineProps<{
@@ -111,7 +159,12 @@ const emit = defineEmits<{
 }>();
 
 const formData = ref<GalleryBlockContent>({
-  images: props.modelValue?.images?.length ? [...props.modelValue.images] : [],
+  images: props.modelValue?.images?.length ? props.modelValue.images.map(img => ({
+    ...img,
+    size: img.size || 'medium' as MediaSize
+  })) : [],
+  layout: props.modelValue?.layout || 'grid',
+  columns: props.modelValue?.columns || 3,
 });
 
 const fileInputs = ref<(HTMLInputElement | null)[]>(
@@ -123,6 +176,7 @@ const addImage = () => {
   formData.value.images.push({
     src: '',
     caption: '',
+    size: 'medium' as MediaSize,
   });
   fileInputs.value.push(null);
 };

@@ -16,6 +16,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -62,7 +63,6 @@ func (s *server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *server) configureRouter() {
-	// Логирование запросов
 	s.router.Use(func(c *gin.Context) {
 		s.logger.WithFields(logrus.Fields{
 			"method": c.Request.Method,
@@ -71,7 +71,6 @@ func (s *server) configureRouter() {
 		c.Next()
 	})
 
-	// Настройка CORS
 	s.router.Use(cors.New(cors.Config{
 		AllowOrigins:     []string{"http://localhost:5173", "http://127.0.0.1:5173"},
 		AllowMethods:     []string{"GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"},
@@ -81,7 +80,6 @@ func (s *server) configureRouter() {
 		MaxAge:           12 * time.Hour,
 	}))
 
-	// Статика для раздачи загруженных файлов
 	s.router.Static("/uploads", s.uploadDir)
 
 	s.router.POST("/login-users", s.handleUsersCreate())
@@ -90,6 +88,7 @@ func (s *server) configureRouter() {
 	s.router.GET("/posts", s.handlePublicPostsList())
 	s.router.GET("/posts/:id", s.handlePublicPostDetail())
 	s.router.GET("/posts/:id/comments", s.handlePublicPostComments())
+	s.router.GET("/users/:id", s.handlePublicUserGet())
 
 	admin := s.router.Group("/admin")
 	{
@@ -131,6 +130,8 @@ func (s *server) configureRouter() {
 			protectedAdmin.DELETE("/comments/:id", s.handleAdminCommentDelete())
 
 			protectedAdmin.GET("/users", s.handleAdminUsersList())
+			protectedAdmin.GET("/users/:id", s.handleAdminUserGet())
+			protectedAdmin.PATCH("/users/:id/ban", s.handleAdminUserBan())
 		}
 	}
 
@@ -143,7 +144,6 @@ func (s *server) configureRouter() {
 		protected.DELETE("/comments/:id", s.handleUserCommentDelete())
 	}
 
-	// Обработчик 404 для всех остальных маршрутов
 	s.router.NoRoute(func(c *gin.Context) {
 		s.error(c, http.StatusNotFound, errors.New("page not found"))
 	})
@@ -824,11 +824,15 @@ func (s *server) handleAdminPostDetail() gin.HandlerFunc {
 
 func (s *server) handleAdminPostCreate() gin.HandlerFunc {
 	type request struct {
-		Title       string   `json:"title" binding:"required"`
-		Content     string   `json:"content" binding:"required"`
-		Images      []string `json:"images"`
-		Pages       []string `json:"pages"`
-		IsPublished bool     `json:"is_published"`
+		Title          string   `json:"title" binding:"required"`
+		Content        string   `json:"content" binding:"required"`
+		Images         []string `json:"images"`
+		Videos         []string `json:"videos"`
+		Pages          []string `json:"pages"`
+		IsPublished    bool     `json:"is_published"`
+		Alignment      string   `json:"alignment"`
+		TitlePosition  string   `json:"title_position"`
+		ContentPosition string  `json:"content_position"`
 	}
 	return func(c *gin.Context) {
 		req := request{}
@@ -843,6 +847,12 @@ func (s *server) handleAdminPostCreate() gin.HandlerFunc {
 			return
 		}
 
+		videos, err := json.Marshal(req.Videos)
+		if err != nil {
+			s.error(c, http.StatusBadRequest, err)
+			return
+		}
+
 		pages, err := json.Marshal(req.Pages)
 		if err != nil {
 			s.error(c, http.StatusBadRequest, err)
@@ -850,11 +860,15 @@ func (s *server) handleAdminPostCreate() gin.HandlerFunc {
 		}
 
 		post := &model.Post{
-			Title:       req.Title,
-			Content:     req.Content,
-			Images:      images,
-			Pages:       pages,
-			IsPublished: req.IsPublished,
+			Title:          req.Title,
+			Content:        req.Content,
+			Images:         images,
+			Videos:         videos,
+			Pages:          pages,
+			IsPublished:    req.IsPublished,
+			Alignment:      req.Alignment,
+			TitlePosition:  req.TitlePosition,
+			ContentPosition: req.ContentPosition,
 		}
 		if err := s.store.Post().Create(post); err != nil {
 			s.error(c, http.StatusInternalServerError, err)
@@ -866,11 +880,15 @@ func (s *server) handleAdminPostCreate() gin.HandlerFunc {
 
 func (s *server) handleAdminPostUpdate() gin.HandlerFunc {
 	type request struct {
-		Title       *string  `json:"title"`
-		Content     *string  `json:"content"`
-		Images      []string `json:"images"`
-		Pages       []string `json:"pages"`
-		IsPublished *bool    `json:"is_published"`
+		Title          *string  `json:"title"`
+		Content        *string  `json:"content"`
+		Images         []string `json:"images"`
+		Videos         []string `json:"videos"`
+		Pages          []string `json:"pages"`
+		IsPublished    *bool    `json:"is_published"`
+		Alignment      *string  `json:"alignment"`
+		TitlePosition  *string  `json:"title_position"`
+		ContentPosition *string `json:"content_position"`
 	}
 	return func(c *gin.Context) {
 		id := c.Param("id")
@@ -901,6 +919,11 @@ func (s *server) handleAdminPostUpdate() gin.HandlerFunc {
 				post.Images = images
 			}
 		}
+		if req.Videos != nil {
+			if videos, err := json.Marshal(req.Videos); err == nil {
+				post.Videos = videos
+			}
+		}
 		if req.Pages != nil {
 			if pages, err := json.Marshal(req.Pages); err == nil {
 				post.Pages = pages
@@ -908,6 +931,15 @@ func (s *server) handleAdminPostUpdate() gin.HandlerFunc {
 		}
 		if req.IsPublished != nil {
 			post.IsPublished = *req.IsPublished
+		}
+		if req.Alignment != nil {
+			post.Alignment = *req.Alignment
+		}
+		if req.TitlePosition != nil {
+			post.TitlePosition = *req.TitlePosition
+		}
+		if req.ContentPosition != nil {
+			post.ContentPosition = *req.ContentPosition
 		}
 
 		if err := s.store.Post().Update(post); err != nil {
@@ -1248,6 +1280,114 @@ func (s *server) handleAdminUsersList() gin.HandlerFunc {
 	}
 }
 
+func (s *server) handleAdminUserGet() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		userIDStr := c.Param("id")
+		userID, err := strconv.Atoi(userIDStr)
+		if err != nil {
+			s.error(c, http.StatusBadRequest, errors.New("invalid user ID"))
+			return
+		}
+
+		user, err := s.store.User().FindByID(userID)
+		if err != nil {
+			if errors.Is(err, store.ErrRecordNotFound) {
+				s.error(c, http.StatusNotFound, errors.New("user not found"))
+				return
+			}
+			s.error(c, http.StatusInternalServerError, err)
+			return
+		}
+
+		commentsCount, err := s.store.User().GetCommentsCount(userID)
+		if err != nil {
+			commentsCount = 0
+		}
+
+		user.Sanitize()
+		response := map[string]interface{}{
+			"id":            user.ID,
+			"email":         user.Email,
+			"is_admin":      user.IsAdmin,
+			"banned":        user.Banned,
+			"created_at":    user.CreatedAt,
+			"updated_at":    user.UpdatedAt,
+			"comments_count": commentsCount,
+		}
+
+		s.respond(c, response, http.StatusOK)
+	}
+}
+
+func (s *server) handleAdminUserBan() gin.HandlerFunc {
+	type request struct {
+		Banned bool `json:"banned"`
+	}
+	return func(c *gin.Context) {
+		userIDStr := c.Param("id")
+		userID, err := strconv.Atoi(userIDStr)
+		if err != nil {
+			s.error(c, http.StatusBadRequest, errors.New("invalid user ID"))
+			return
+		}
+
+		req := request{}
+		if err := c.ShouldBindJSON(&req); err != nil {
+			s.error(c, http.StatusBadRequest, err)
+			return
+		}
+
+		if err := s.store.User().UpdateBanned(userID, req.Banned); err != nil {
+			s.error(c, http.StatusInternalServerError, err)
+			return
+		}
+
+		s.respond(c, map[string]interface{}{
+			"status": "updated",
+			"banned": req.Banned,
+		}, http.StatusOK)
+	}
+}
+
+func (s *server) handlePublicUserGet() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		userIDStr := c.Param("id")
+		userID, err := strconv.Atoi(userIDStr)
+		if err != nil {
+			s.error(c, http.StatusBadRequest, errors.New("invalid user ID"))
+			return
+		}
+
+		user, err := s.store.User().FindByID(userID)
+		if err != nil {
+			if errors.Is(err, store.ErrRecordNotFound) {
+				s.error(c, http.StatusNotFound, errors.New("user not found"))
+				return
+			}
+			s.error(c, http.StatusInternalServerError, err)
+			return
+		}
+
+		commentsCount, err := s.store.User().GetCommentsCount(userID)
+		if err != nil {
+			commentsCount = 0
+		}
+
+		user.Sanitize()
+		response := map[string]interface{}{
+			"id":             user.ID,
+			"email":          user.Email,
+			"is_admin":       user.IsAdmin,
+			"created_at":     user.CreatedAt,
+			"updated_at":     user.UpdatedAt,
+			"comments_count": commentsCount,
+		}
+		// Не показываем статус banned для обычных пользователей
+
+		s.respond(c, response, http.StatusOK)
+	}
+}
+
 func (s *server) ensureAdminUser(adminID int) (int, error) {
 	admin, err := s.store.Admin().FindByID(adminID)
 	if err != nil {
@@ -1304,7 +1444,6 @@ func (s *server) handleAdminUpload() gin.HandlerFunc {
 		filename := hex.EncodeToString(randomBytes) + ext
 		fullPath := filepath.Join(s.uploadDir, filename)
 
-		// Сохраняем файл
 		src, err := file.Open()
 		if err != nil {
 			s.error(c, http.StatusInternalServerError, fmt.Errorf("failed to open file: %w", err))
@@ -1324,7 +1463,6 @@ func (s *server) handleAdminUpload() gin.HandlerFunc {
 			return
 		}
 
-		// Возвращаем URL файла
 		url := fmt.Sprintf("/uploads/%s", filename)
 		s.respond(c, map[string]string{"url": url}, http.StatusOK)
 	}

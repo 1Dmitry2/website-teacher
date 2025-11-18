@@ -4,6 +4,8 @@
     
     <PageBlocks />
     
+    <PostsList />
+    
     <div v-if="!hasBlocks" class="prose max-w-none">
       <p class="text-gray-600">Здесь будет информация о преподавателе.</p>
     </div>
@@ -13,6 +15,7 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import PageBlocks from '../components/PageBlocks.vue';
+import PostsList from '../components/PostsList.vue';
 
 const hasBlocks = ref(false);
 </script>

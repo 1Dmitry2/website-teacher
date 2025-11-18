@@ -1,6 +1,6 @@
 <template>
   <div class="flex flex-col items-center justify-center min-h-screen bg-gray-100 px-4 py-8">
-    <div class="bg-white shadow-md rounded-xl p-6 sm:p-8 w-full max-w-sm">
+    <div class="bg-white shadow-md rounded-xl p-5 sm:p-6 md:p-8 w-full max-w-sm">
       <h1 class="text-xl sm:text-2xl font-bold mb-4 sm:mb-6 text-center">Регистрация</h1>
       <form @submit="onForm" class="space-y-4 flex flex-col">
         <div>
@@ -30,10 +30,10 @@
             :disabled="loading"
           />
         </div>
-        <div v-if="error" class="text-red-600 text-xs sm:text-sm bg-red-50 border border-red-200 rounded-md p-2 sm:p-3">
+        <div v-if="error" class="text-red-600 text-xs sm:text-sm bg-red-50 border border-red-200 rounded-md p-2 sm:p-3 break-words">
           {{ error }}
         </div>
-        <div v-if="success" class="text-green-600 text-xs sm:text-sm bg-green-50 border border-green-200 rounded-md p-2 sm:p-3">
+        <div v-if="success" class="text-green-600 text-xs sm:text-sm bg-green-50 border border-green-200 rounded-md p-2 sm:p-3 break-words">
           {{ success }}
         </div>
         <ui-button 

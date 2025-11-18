@@ -15,10 +15,12 @@ func (r *CommentRepository) scanRow(scanner interface {
 }) (*model.Comment, error) {
 	var c model.Comment
 	var replyTo *string
-	if err := scanner.Scan(&c.ID, &c.PostID, &c.UserID, &replyTo, &c.Text, &c.IsAdmin, &c.CreatedAt); err != nil {
+	var userEmail *string
+	if err := scanner.Scan(&c.ID, &c.PostID, &c.UserID, &replyTo, &c.Text, &c.IsAdmin, &c.CreatedAt, &userEmail); err != nil {
 		return nil, err
 	}
 	c.ReplyTo = replyTo
+	c.UserEmail = userEmail
 	return &c, nil
 }
 
@@ -46,10 +48,11 @@ func (r *CommentRepository) ListAll() ([]*model.Comment, error) {
 
 func (r *CommentRepository) ListByPost(postID string) ([]*model.Comment, error) {
 	rows, err := r.store.db.Query(`
-		SELECT id, post_id, user_id, reply_to, text, is_admin, created_at
-		FROM comments
-		WHERE post_id = $1
-		ORDER BY created_at ASC
+		SELECT c.id, c.post_id, c.user_id, c.reply_to, c.text, c.is_admin, c.created_at, u.email
+		FROM comments c
+		LEFT JOIN users u ON c.user_id = u.id
+		WHERE c.post_id = $1
+		ORDER BY c.created_at ASC
 	`, postID)
 	if err != nil {
 		return nil, err
@@ -69,9 +72,10 @@ func (r *CommentRepository) ListByPost(postID string) ([]*model.Comment, error) 
 
 func (r *CommentRepository) FindByID(id string) (*model.Comment, error) {
 	comment, err := r.scanRow(r.store.db.QueryRow(`
-		SELECT id, post_id, user_id, reply_to, text, is_admin, created_at
-		FROM comments
-		WHERE id = $1
+		SELECT c.id, c.post_id, c.user_id, c.reply_to, c.text, c.is_admin, c.created_at, u.email
+		FROM comments c
+		LEFT JOIN users u ON c.user_id = u.id
+		WHERE c.id = $1
 	`, id))
 	if err != nil {
 		if err == sql.ErrNoRows {

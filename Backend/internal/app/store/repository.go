@@ -10,6 +10,8 @@ type UserRepository interface {
 	FindByEmail(string) (*model.User, error)
 	FindByID(int) (*model.User, error)
 	List() ([]*model.User, error)
+	UpdateBanned(id int, banned bool) error
+	GetCommentsCount(userID int) (int, error)
 }
 
 type AdminRepository interface {

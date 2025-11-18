@@ -5,7 +5,7 @@
         <p class="text-sm uppercase tracking-wide text-indigo-600 font-semibold">
           Админ-панель
         </p>
-        <h1 class="text-3xl font-bold text-gray-900">Панель управления</h1>
+        <h1 class="text-2xl sm:text-3xl font-bold text-gray-900">Панель управления</h1>
         <p class="text-gray-500" v-if="profile">
           {{ profile.email }}
         </p>
@@ -22,7 +22,7 @@
     </div>
 
     <div v-else class="space-y-8">
-      <div class="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+      <div class="grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
         <router-link
           to="/admin/blocks"
           class="bg-white rounded-xl shadow p-6 hover:shadow-lg transition-shadow cursor-pointer group"
@@ -92,7 +92,7 @@
         </router-link>
       </div>
 
-      <div class="grid gap-6 md:grid-cols-2">
+      <div class="grid gap-4 sm:gap-6 grid-cols-1 md:grid-cols-2">
         <div class="bg-white rounded-xl shadow p-6 space-y-4">
           <h2 class="text-xl font-semibold text-gray-900">Информация об администраторе</h2>
           <ul class="text-sm text-gray-600 space-y-2">

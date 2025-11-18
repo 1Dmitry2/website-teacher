@@ -13,8 +13,7 @@
         :type="type"
         :placeholder="placeholder"
         :disabled="disabled"
-        :min="$attrs.min"
-        :required="$attrs.required"
+        v-bind="$attrs"
     />
   </div>
 </template>

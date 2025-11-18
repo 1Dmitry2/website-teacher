@@ -8,27 +8,26 @@ import (
 type BlockType string
 
 const (
-	BlockTypeText    BlockType = "text"
-	BlockTypeSlider  BlockType = "slider"
-	BlockTypeGallery BlockType = "gallery"
-	BlockTypeVideo   BlockType = "video"
+	BlockTypeText          BlockType = "text"
+	BlockTypeSlider        BlockType = "slider"
+	BlockTypeGallery       BlockType = "gallery"
+	BlockTypeVideo         BlockType = "video"
+	BlockTypeTextWithImage BlockType = "text-with-image"
 )
 
 type Block struct {
 	ID        string          `json:"id"`
 	Page      string          `json:"page" validate:"required"`
 	Pages     json.RawMessage `json:"-"`
-	Type      BlockType       `json:"type" validate:"required,oneof=text slider gallery video"`
+	Type      BlockType       `json:"type" validate:"required,oneof=text slider gallery video text-with-image"`
 	Content   json.RawMessage `json:"content"`
 	Order     int             `json:"order"`
 	CreatedAt time.Time       `json:"created_at"`
 	UpdatedAt time.Time       `json:"updated_at"`
 	
-	// Для JSON сериализации
 	PagesArray []string `json:"pages,omitempty"`
 }
 
-// MarshalJSON кастомная сериализация для правильной обработки массивов
 func (b *Block) MarshalJSON() ([]byte, error) {
 	type Alias Block
 	aux := &struct {
@@ -39,7 +38,6 @@ func (b *Block) MarshalJSON() ([]byte, error) {
 		DisplayOrder: b.Order,
 	}
 	
-	// Парсим Pages из json.RawMessage
 	if len(b.Pages) > 0 {
 		if err := json.Unmarshal(b.Pages, &aux.PagesArray); err != nil {
 			aux.PagesArray = []string{}

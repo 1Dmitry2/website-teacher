@@ -19,15 +19,27 @@ export interface AuthResponse {
 export interface User {
   id: number;
   email: string;
+  created_at?: string;
+}
+
+export type MediaSize = 'small' | 'medium' | 'large' | 'xlarge';
+
+export interface MediaItem {
+  url: string;
+  size?: MediaSize;
 }
 
 export interface Post {
   id: string;
   title: string;
   content: string;
-  images: string[];
+  images: (string | MediaItem)[];
+  videos?: (string | MediaItem)[];
   pages: string[];
   is_published: boolean;
+  alignment?: 'left' | 'center' | 'right' | 'full-width';
+  title_position?: 'top' | 'bottom' | 'left' | 'right';
+  content_position?: 'top' | 'bottom' | 'left' | 'right';
   created_at: string;
   updated_at: string;
 }
@@ -36,6 +48,7 @@ export interface Comment {
   id: string;
   post_id: string;
   user_id: number;
+  user_email?: string;
   reply_to?: string;
   text: string;
   is_admin: boolean;
@@ -138,7 +151,6 @@ export class ApiClient {
     return response.data!;
   }
 
-  // Public CMS endpoints
   async getPageBlocks(page: string): Promise<any[]> {
     const response = await this.request<any[]>(`/pages/${page}`, { method: 'GET' });
     return response.data || [];
@@ -177,6 +189,13 @@ export class ApiClient {
 
   async deleteComment(commentId: string): Promise<void> {
     await this.request(`/comments/${commentId}`, { method: 'DELETE' });
+  }
+
+  async getUserById(userId: number): Promise<User & { comments_count?: number }> {
+    const response = await this.request<User & { comments_count?: number }>(`/users/${userId}`, {
+      method: 'GET',
+    });
+    return response.data!;
   }
 }
 

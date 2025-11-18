@@ -11,6 +11,7 @@ type User struct {
 	Password          string    `json:"password,omitempty" validate:"required,min=8"`
 	EncryptedPassword string    `json:"-"`
 	IsAdmin           bool      `json:"is_admin"`
+	Banned            bool      `json:"banned"`
 	CreatedAt         time.Time `json:"created_at"`
 	UpdatedAt         time.Time `json:"updated_at"`
 }
