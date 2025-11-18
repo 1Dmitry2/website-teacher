@@ -51,7 +51,7 @@
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
           </svg>
           <Transition name="fade" mode="out-in">
-            <span :key="isCommentExpanded">
+            <span :key="String(isCommentExpanded)">
               <template v-if="!isCommentExpanded">
                 Показать {{ replies.length }} {{ replies.length === 1 ? 'ответ' : replies.length < 5 ? 'ответа' : 'ответов' }}
               </template>

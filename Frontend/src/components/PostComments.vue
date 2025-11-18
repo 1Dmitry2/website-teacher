@@ -61,7 +61,7 @@
     <div v-else class="space-y-4">
       <TransitionGroup name="comment-fade" tag="div">
         <div
-          v-for="(comment, index) in visibleComments"
+          v-for="comment in visibleComments"
           :key="comment.id"
           class="comment-item"
         >

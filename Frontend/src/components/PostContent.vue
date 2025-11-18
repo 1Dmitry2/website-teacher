@@ -19,7 +19,7 @@
               controls
             ></video>
           </div>
-          <div v-else-if="post.images && post.images.length > 0" class="w-full overflow-hidden flex justify-center">
+          <div v-else-if="post.images && post.images.length > 0 && post.images[0]" class="w-full overflow-hidden flex justify-center">
             <img 
               :src="getMediaUrl(post.images[0])" 
               :alt="post.title"
