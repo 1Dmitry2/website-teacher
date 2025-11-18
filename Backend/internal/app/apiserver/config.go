@@ -6,6 +6,7 @@ type Config struct {
 	DataBaseURL string      `toml:"database_url"`
 	JWTSecret   string      `toml:"jwt_secret"`
 	UploadDir   string      `toml:"upload_dir"`
+	CORSOrigins []string    `toml:"cors_origins"`
 	SMTP        SMTPConfig  `toml:"smtp"`
 	Admin       AdminConfig `toml:"admin"`
 	User        UserConfig  `toml:"user"`
@@ -32,6 +33,7 @@ func NewConfig() *Config {
 		BindAddr:  ":8080",
 		LogLevel:  "debug",
 		UploadDir: "./uploads",
+		CORSOrigins: []string{"http://localhost:5173", "http://127.0.0.1:5173"},
 		Admin: AdminConfig{
 			ResetURL: "http://localhost:5173/admin/reset?token=",
 		},

@@ -6,6 +6,8 @@ import (
 	"github.com/BurntSushi/toml"
 	"log"
 	"os"
+	"strconv"
+	"strings"
 )
 
 var (
@@ -29,7 +31,9 @@ func main() {
 		config.SMTP.Host = smtpHost
 	}
 	if smtpPort := os.Getenv("SMTP_PORT"); smtpPort != "" {
-		// Можно добавить парсинг порта, но для простоты оставим как есть
+		if port, err := strconv.Atoi(smtpPort); err == nil {
+			config.SMTP.Port = port
+		}
 	}
 	if smtpUser := os.Getenv("SMTP_USERNAME"); smtpUser != "" {
 		config.SMTP.Username = smtpUser
@@ -39,6 +43,35 @@ func main() {
 	}
 	if smtpFrom := os.Getenv("SMTP_FROM"); smtpFrom != "" {
 		config.SMTP.From = smtpFrom
+	}
+	
+	// CORS origins from environment
+	if corsOrigins := os.Getenv("CORS_ORIGINS"); corsOrigins != "" {
+		origins := strings.Split(corsOrigins, ",")
+		for i := range origins {
+			origins[i] = strings.TrimSpace(origins[i])
+		}
+		config.CORSOrigins = origins
+	}
+	
+	// Database URL from environment
+	if dbURL := os.Getenv("DATABASE_URL"); dbURL != "" {
+		config.DataBaseURL = dbURL
+	}
+	
+	// JWT Secret from environment
+	if jwtSecret := os.Getenv("JWT_SECRET"); jwtSecret != "" {
+		config.JWTSecret = jwtSecret
+	}
+	
+	// Admin reset URL from environment
+	if adminResetURL := os.Getenv("ADMIN_RESET_URL"); adminResetURL != "" {
+		config.Admin.ResetURL = adminResetURL
+	}
+	
+	// User verification URL from environment
+	if userVerificationURL := os.Getenv("USER_VERIFICATION_URL"); userVerificationURL != "" {
+		config.User.VerificationURL = userVerificationURL
 	}
 	
 	if err := apiserver.Start(config); err != nil {

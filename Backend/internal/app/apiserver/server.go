@@ -46,9 +46,10 @@ type server struct {
 	passwordResetURL  string
 	verificationURL   string
 	uploadDir         string
+	corsOrigins       []string
 }
 
-func newServer(store store.Store, jwtSecret string, mailer *mailer.Mailer, passwordResetURL string, verificationURL string, uploadDir string) *server {
+func newServer(store store.Store, jwtSecret string, mailer *mailer.Mailer, passwordResetURL string, verificationURL string, uploadDir string, corsOrigins []string) *server {
 	s := &server{
 		router:            gin.Default(),
 		logger:            logrus.New(),
@@ -58,6 +59,7 @@ func newServer(store store.Store, jwtSecret string, mailer *mailer.Mailer, passw
 		passwordResetURL:  passwordResetURL,
 		verificationURL:   verificationURL,
 		uploadDir:         uploadDir,
+		corsOrigins:       corsOrigins,
 	}
 	s.configureRouter()
 
@@ -77,8 +79,14 @@ func (s *server) configureRouter() {
 		c.Next()
 	})
 
+	// Use CORS origins from config, fallback to defaults if empty
+	corsOrigins := s.corsOrigins
+	if len(corsOrigins) == 0 {
+		corsOrigins = []string{"http://localhost:5173", "http://127.0.0.1:5173"}
+	}
+	
 	s.router.Use(cors.New(cors.Config{
-		AllowOrigins:     []string{"http://localhost:5173", "http://127.0.0.1:5173"},
+		AllowOrigins:     corsOrigins,
 		AllowMethods:     []string{"GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"},
 		AllowHeaders:     []string{"Origin", "Content-Length", "Content-Type", "Authorization"},
 		ExposeHeaders:    []string{"Content-Length"},
