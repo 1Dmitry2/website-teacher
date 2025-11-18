@@ -6,14 +6,17 @@ import (
 )
 
 type User struct {
-	ID                int       `json:"id"`
-	Email             string    `json:"email" validate:"required,email"`
-	Password          string    `json:"password,omitempty" validate:"required,min=8"`
-	EncryptedPassword string    `json:"-"`
-	IsAdmin           bool      `json:"is_admin"`
-	Banned            bool      `json:"banned"`
-	CreatedAt         time.Time `json:"created_at"`
-	UpdatedAt         time.Time `json:"updated_at"`
+	ID                              int        `json:"id"`
+	Email                           string     `json:"email" validate:"required,email"`
+	Password                        string     `json:"password,omitempty" validate:"required,min=8"`
+	EncryptedPassword               string     `json:"-"`
+	IsAdmin                         bool       `json:"is_admin"`
+	Banned                          bool       `json:"banned"`
+	EmailVerified                   bool       `json:"email_verified"`
+	EmailVerificationToken          *string    `json:"-"`
+	EmailVerificationTokenExpires   *time.Time `json:"-"`
+	CreatedAt                       time.Time  `json:"created_at"`
+	UpdatedAt                       time.Time  `json:"updated_at"`
 }
 
 func (u *User) BeforeCreate() error {

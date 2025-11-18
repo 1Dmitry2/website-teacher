@@ -25,33 +25,39 @@ var (
 	errIncorrectEmailOrPassword = errors.New("incorrect email or password")
 	errInvalidResetToken        = errors.New("invalid reset token")
 	errExpiredResetToken        = errors.New("reset token expired")
+	errInvalidVerificationToken = errors.New("invalid verification token")
+	errExpiredVerificationToken = errors.New("verification token expired")
+	errEmailAlreadyVerified     = errors.New("email already verified")
 )
 
 const (
-	userTokenTTL  = 24 * time.Hour
-	adminTokenTTL = 7 * 24 * time.Hour
-	resetTokenTTL = 30 * time.Minute
+	userTokenTTL           = 24 * time.Hour
+	adminTokenTTL         = 7 * 24 * time.Hour
+	resetTokenTTL          = 30 * time.Minute
+	verificationTokenTTL   = 24 * time.Hour
 )
 
 type server struct {
-	router           *gin.Engine
-	logger           *logrus.Logger
-	store            store.Store
-	jwtSecret        string
-	mailer           *mailer.Mailer
-	passwordResetURL string
-	uploadDir        string
+	router            *gin.Engine
+	logger            *logrus.Logger
+	store             store.Store
+	jwtSecret         string
+	mailer            *mailer.Mailer
+	passwordResetURL  string
+	verificationURL   string
+	uploadDir         string
 }
 
-func newServer(store store.Store, jwtSecret string, mailer *mailer.Mailer, passwordResetURL string, uploadDir string) *server {
+func newServer(store store.Store, jwtSecret string, mailer *mailer.Mailer, passwordResetURL string, verificationURL string, uploadDir string) *server {
 	s := &server{
-		router:           gin.Default(),
-		logger:           logrus.New(),
-		store:            store,
-		jwtSecret:        jwtSecret,
-		mailer:           mailer,
-		passwordResetURL: passwordResetURL,
-		uploadDir:        uploadDir,
+		router:            gin.Default(),
+		logger:            logrus.New(),
+		store:             store,
+		jwtSecret:         jwtSecret,
+		mailer:            mailer,
+		passwordResetURL:  passwordResetURL,
+		verificationURL:   verificationURL,
+		uploadDir:         uploadDir,
 	}
 	s.configureRouter()
 
@@ -84,6 +90,8 @@ func (s *server) configureRouter() {
 
 	s.router.POST("/login-users", s.handleUsersCreate())
 	s.router.POST("/sessions", s.handleSessionsCreate())
+	s.router.POST("/verify-email", s.handleVerifyEmail())
+	s.router.POST("/resend-verification", s.handleResendVerification())
 	s.router.GET("/pages/*page", s.handlePublicPageBlocks())
 	s.router.GET("/posts", s.handlePublicPostsList())
 	s.router.GET("/posts/:id", s.handlePublicPostDetail())
@@ -171,13 +179,38 @@ func (s *server) handleUsersCreate() gin.HandlerFunc {
 			return
 		}
 
+		// Генерируем токен верификации
+		verificationToken, err := generateResetToken()
+		if err != nil {
+			s.error(c, http.StatusInternalServerError, err)
+			return
+		}
+
+		// Сохраняем токен в БД
+		if err := s.store.User().SaveVerificationToken(u.ID, verificationToken, time.Now().Add(verificationTokenTTL)); err != nil {
+			s.error(c, http.StatusInternalServerError, err)
+			return
+		}
+
+		// Отправляем письмо с верификацией
+		verificationLink := s.buildVerificationLink(verificationToken)
+		if err := s.mailer.SendVerificationEmail(u.Email, verificationLink); err != nil {
+			s.logger.WithError(err).Error("Failed to send verification email")
+			// Не возвращаем ошибку, чтобы пользователь мог зарегистрироваться
+			// Но логируем проблему
+		}
+
 		token, err := GenerateToken(u.ID, TokenScopeUser, s.jwtSecret, userTokenTTL)
 		if err != nil {
 			s.error(c, http.StatusInternalServerError, err)
 			return
 		}
 
-		s.respond(c, map[string]string{"token": token}, http.StatusCreated)
+		s.respond(c, map[string]interface{}{
+			"token":          token,
+			"email_verified": false,
+			"message":        "Регистрация успешна. Пожалуйста, проверьте вашу почту для подтверждения email адреса.",
+		}, http.StatusCreated)
 
 	}
 }
@@ -205,7 +238,10 @@ func (s *server) handleSessionsCreate() gin.HandlerFunc {
 			return
 		}
 
-		s.respond(c, map[string]string{"token": token}, http.StatusOK)
+		s.respond(c, map[string]interface{}{
+			"token":          token,
+			"email_verified": u.EmailVerified,
+		}, http.StatusOK)
 	}
 }
 
@@ -470,6 +506,111 @@ func (s *server) buildResetLink(token string) string {
 		return fmt.Sprintf(s.passwordResetURL, token)
 	}
 	return fmt.Sprintf("%s%s", s.passwordResetURL, token)
+}
+
+func (s *server) buildVerificationLink(token string) string {
+	if strings.Contains(s.verificationURL, "%s") {
+		return fmt.Sprintf(s.verificationURL, token)
+	}
+	return fmt.Sprintf("%s%s", s.verificationURL, token)
+}
+
+func (s *server) handleVerifyEmail() gin.HandlerFunc {
+	type request struct {
+		Token string `json:"token"`
+	}
+
+	return func(c *gin.Context) {
+		req := &request{}
+		if err := json.NewDecoder(c.Request.Body).Decode(req); err != nil {
+			s.error(c, http.StatusBadRequest, err)
+			return
+		}
+
+		if req.Token == "" {
+			s.error(c, http.StatusBadRequest, errors.New("token is required"))
+			return
+		}
+
+		user, err := s.store.User().FindByVerificationToken(req.Token)
+		if err != nil {
+			if errors.Is(err, store.ErrRecordNotFound) {
+				s.error(c, http.StatusBadRequest, errInvalidVerificationToken)
+				return
+			}
+			s.error(c, http.StatusInternalServerError, err)
+			return
+		}
+
+		if user.EmailVerified {
+			s.error(c, http.StatusBadRequest, errEmailAlreadyVerified)
+			return
+		}
+
+		if user.EmailVerificationTokenExpires == nil || time.Now().After(*user.EmailVerificationTokenExpires) {
+			s.error(c, http.StatusBadRequest, errExpiredVerificationToken)
+			return
+		}
+
+		if err := s.store.User().VerifyEmail(user.ID); err != nil {
+			s.error(c, http.StatusInternalServerError, err)
+			return
+		}
+
+		s.respond(c, map[string]string{"status": "email verified"}, http.StatusOK)
+	}
+}
+
+func (s *server) handleResendVerification() gin.HandlerFunc {
+	type request struct {
+		Email string `json:"email"`
+	}
+
+	return func(c *gin.Context) {
+		req := &request{}
+		if err := json.NewDecoder(c.Request.Body).Decode(req); err != nil {
+			s.error(c, http.StatusBadRequest, err)
+			return
+		}
+
+		user, err := s.store.User().FindByEmail(req.Email)
+		if err != nil {
+			if errors.Is(err, store.ErrRecordNotFound) {
+				// Не раскрываем, что пользователь не существует
+				s.respond(c, map[string]string{"status": "if the email exists, verification email was sent"}, http.StatusOK)
+				return
+			}
+			s.error(c, http.StatusInternalServerError, err)
+			return
+		}
+
+		if user.EmailVerified {
+			s.error(c, http.StatusBadRequest, errEmailAlreadyVerified)
+			return
+		}
+
+		// Генерируем новый токен верификации
+		verificationToken, err := generateResetToken()
+		if err != nil {
+			s.error(c, http.StatusInternalServerError, err)
+			return
+		}
+
+		// Сохраняем токен в БД
+		if err := s.store.User().SaveVerificationToken(user.ID, verificationToken, time.Now().Add(verificationTokenTTL)); err != nil {
+			s.error(c, http.StatusInternalServerError, err)
+			return
+		}
+
+		// Отправляем письмо с верификацией
+		verificationLink := s.buildVerificationLink(verificationToken)
+		if err := s.mailer.SendVerificationEmail(user.Email, verificationLink); err != nil {
+			s.error(c, http.StatusInternalServerError, err)
+			return
+		}
+
+		s.respond(c, map[string]string{"status": "if the email exists, verification email was sent"}, http.StatusOK)
+	}
 }
 
 func (s *server) handleProfile() gin.HandlerFunc {

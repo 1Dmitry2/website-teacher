@@ -8,6 +8,7 @@ type Config struct {
 	UploadDir   string      `toml:"upload_dir"`
 	SMTP        SMTPConfig  `toml:"smtp"`
 	Admin       AdminConfig `toml:"admin"`
+	User        UserConfig  `toml:"user"`
 }
 
 type SMTPConfig struct {
@@ -22,6 +23,10 @@ type AdminConfig struct {
 	ResetURL string `toml:"reset_url"`
 }
 
+type UserConfig struct {
+	VerificationURL string `toml:"verification_url"`
+}
+
 func NewConfig() *Config {
 	return &Config{
 		BindAddr:  ":8080",
@@ -29,6 +34,9 @@ func NewConfig() *Config {
 		UploadDir: "./uploads",
 		Admin: AdminConfig{
 			ResetURL: "http://localhost:5173/admin/reset?token=",
+		},
+		User: UserConfig{
+			VerificationURL: "http://localhost:5173/verify-email?token=",
 		},
 	}
 }

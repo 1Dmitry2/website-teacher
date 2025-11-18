@@ -4,6 +4,7 @@ import (
 	"backed-teacher/internal/app/model"
 	"backed-teacher/internal/app/store"
 	"database/sql"
+	"time"
 )
 
 type UserRepository struct {
@@ -29,36 +30,54 @@ func (r *UserRepository) Create(u *model.User) error {
 
 func (r *UserRepository) FindByEmail(email string) (*model.User, error) {
 	u := &model.User{}
+	var token sql.NullString
+	var tokenExpires sql.NullTime
 	if err := r.store.db.QueryRow(
-		"SELECT id, email, encrypted_password, is_admin, banned, created_at, updated_at FROM users WHERE email = $1", email,
+		"SELECT id, email, encrypted_password, is_admin, banned, email_verified, email_verification_token, email_verification_token_expires, created_at, updated_at FROM users WHERE email = $1", email,
 	).Scan(
-		&u.ID, &u.Email, &u.EncryptedPassword, &u.IsAdmin, &u.Banned, &u.CreatedAt, &u.UpdatedAt,
+		&u.ID, &u.Email, &u.EncryptedPassword, &u.IsAdmin, &u.Banned, &u.EmailVerified, &token, &tokenExpires, &u.CreatedAt, &u.UpdatedAt,
 	); err != nil {
 		if err == sql.ErrNoRows {
 			return nil, store.ErrRecordNotFound
 		}
 		return nil, err
+	}
+	if token.Valid {
+		tokenStr := token.String
+		u.EmailVerificationToken = &tokenStr
+	}
+	if tokenExpires.Valid {
+		u.EmailVerificationTokenExpires = &tokenExpires.Time
 	}
 	return u, nil
 }
 
 func (r *UserRepository) FindByID(id int) (*model.User, error) {
 	u := &model.User{}
+	var token sql.NullString
+	var tokenExpires sql.NullTime
 	if err := r.store.db.QueryRow(
-		"SELECT id, email, encrypted_password, is_admin, banned, created_at, updated_at FROM users WHERE id = $1", id,
+		"SELECT id, email, encrypted_password, is_admin, banned, email_verified, email_verification_token, email_verification_token_expires, created_at, updated_at FROM users WHERE id = $1", id,
 	).Scan(
-		&u.ID, &u.Email, &u.EncryptedPassword, &u.IsAdmin, &u.Banned, &u.CreatedAt, &u.UpdatedAt,
+		&u.ID, &u.Email, &u.EncryptedPassword, &u.IsAdmin, &u.Banned, &u.EmailVerified, &token, &tokenExpires, &u.CreatedAt, &u.UpdatedAt,
 	); err != nil {
 		if err == sql.ErrNoRows {
 			return nil, store.ErrRecordNotFound
 		}
 		return nil, err
 	}
+	if token.Valid {
+		tokenStr := token.String
+		u.EmailVerificationToken = &tokenStr
+	}
+	if tokenExpires.Valid {
+		u.EmailVerificationTokenExpires = &tokenExpires.Time
+	}
 	return u, nil
 }
 
 func (r *UserRepository) List() ([]*model.User, error) {
-	rows, err := r.store.db.Query(`SELECT id, email, is_admin, banned, created_at, updated_at FROM users ORDER BY created_at DESC`)
+	rows, err := r.store.db.Query(`SELECT id, email, is_admin, banned, email_verified, created_at, updated_at FROM users ORDER BY created_at DESC`)
 	if err != nil {
 		return nil, err
 	}
@@ -67,7 +86,7 @@ func (r *UserRepository) List() ([]*model.User, error) {
 	var users []*model.User
 	for rows.Next() {
 		var u model.User
-		if err := rows.Scan(&u.ID, &u.Email, &u.IsAdmin, &u.Banned, &u.CreatedAt, &u.UpdatedAt); err != nil {
+		if err := rows.Scan(&u.ID, &u.Email, &u.IsAdmin, &u.Banned, &u.EmailVerified, &u.CreatedAt, &u.UpdatedAt); err != nil {
 			return nil, err
 		}
 		users = append(users, &u)
@@ -77,6 +96,46 @@ func (r *UserRepository) List() ([]*model.User, error) {
 
 func (r *UserRepository) UpdateBanned(id int, banned bool) error {
 	_, err := r.store.db.Exec(`UPDATE users SET banned = $1, updated_at = now() WHERE id = $2`, banned, id)
+	return err
+}
+
+func (r *UserRepository) FindByVerificationToken(token string) (*model.User, error) {
+	u := &model.User{}
+	var dbToken sql.NullString
+	var tokenExpires sql.NullTime
+	if err := r.store.db.QueryRow(
+		"SELECT id, email, encrypted_password, is_admin, banned, email_verified, email_verification_token, email_verification_token_expires, created_at, updated_at FROM users WHERE email_verification_token = $1", token,
+	).Scan(
+		&u.ID, &u.Email, &u.EncryptedPassword, &u.IsAdmin, &u.Banned, &u.EmailVerified, &dbToken, &tokenExpires, &u.CreatedAt, &u.UpdatedAt,
+	); err != nil {
+		if err == sql.ErrNoRows {
+			return nil, store.ErrRecordNotFound
+		}
+		return nil, err
+	}
+	if dbToken.Valid {
+		tokenStr := dbToken.String
+		u.EmailVerificationToken = &tokenStr
+	}
+	if tokenExpires.Valid {
+		u.EmailVerificationTokenExpires = &tokenExpires.Time
+	}
+	return u, nil
+}
+
+func (r *UserRepository) SaveVerificationToken(userID int, token string, expires time.Time) error {
+	_, err := r.store.db.Exec(
+		`UPDATE users SET email_verification_token = $1, email_verification_token_expires = $2, updated_at = now() WHERE id = $3`,
+		token, expires, userID,
+	)
+	return err
+}
+
+func (r *UserRepository) VerifyEmail(userID int) error {
+	_, err := r.store.db.Exec(
+		`UPDATE users SET email_verified = true, email_verification_token = NULL, email_verification_token_expires = NULL, updated_at = now() WHERE id = $1`,
+		userID,
+	)
 	return err
 }
 

@@ -13,3 +13,6 @@ from = "your-email@gmail.com"
 
 [admin]
 reset_url = "http://localhost:5173/admin/reset?token="
+
+[user]
+verification_url = "http://localhost:5173/verify-email?token="

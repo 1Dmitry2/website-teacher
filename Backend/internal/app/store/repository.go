@@ -9,8 +9,11 @@ type UserRepository interface {
 	Create(*model.User) error
 	FindByEmail(string) (*model.User, error)
 	FindByID(int) (*model.User, error)
+	FindByVerificationToken(string) (*model.User, error)
 	List() ([]*model.User, error)
 	UpdateBanned(id int, banned bool) error
+	SaveVerificationToken(userID int, token string, expires time.Time) error
+	VerifyEmail(userID int) error
 	GetCommentsCount(userID int) (int, error)
 }
 

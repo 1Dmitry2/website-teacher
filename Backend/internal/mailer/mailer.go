@@ -41,6 +41,21 @@ func (m *Mailer) SendResetPasswordEmail(to, resetLink string) error {
 	return smtp.SendMail(addr, auth, m.cfg.From, []string{to}, []byte(msg))
 }
 
+func (m *Mailer) SendVerificationEmail(to, verificationLink string) error {
+	subject := "Подтверждение email адреса"
+	body := fmt.Sprintf(
+		"Добро пожаловать!\n\nДля подтверждения вашего email адреса перейдите по ссылке:\n\n%s\n\nСсылка действительна 24 часа.\n\nЕсли вы не регистрировались на нашем сайте, просто проигнорируйте это письмо.",
+		verificationLink,
+	)
+
+	msg := buildMessage(m.cfg.From, []string{to}, subject, body)
+
+	addr := fmt.Sprintf("%s:%d", m.cfg.Host, m.cfg.Port)
+	auth := smtp.PlainAuth("", m.cfg.Username, m.cfg.Password, m.cfg.Host)
+
+	return smtp.SendMail(addr, auth, m.cfg.From, []string{to}, []byte(msg))
+}
+
 func buildMessage(from string, to []string, subject, body string) string {
 	headers := []string{
 		fmt.Sprintf("From: %s", from),

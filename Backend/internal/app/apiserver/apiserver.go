@@ -28,7 +28,7 @@ func Start(config *Config) error {
 		return err
 	}
 
-	srv := newServer(store, config.JWTSecret, mailerService, config.Admin.ResetURL, config.UploadDir)
+	srv := newServer(store, config.JWTSecret, mailerService, config.Admin.ResetURL, config.User.VerificationURL, config.UploadDir)
 	return http.ListenAndServe(config.BindAddr, srv)
 }
 
