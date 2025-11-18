@@ -81,6 +81,14 @@
       />
       <p class="text-xs text-gray-500 mt-1">Оставьте пустым для автоматической ширины</p>
     </div>
+
+    <NotificationModal
+      :is-open="notification.isOpen.value"
+      :type="notification.options.value.type"
+      :title="notification.options.value.title"
+      :message="notification.options.value.message"
+      @close="notification.close"
+    />
   </div>
 </template>
 
@@ -88,7 +96,9 @@
 import { ref, watch } from 'vue';
 import UiInput from '../ui/Ui-input.vue';
 import UiButton from '../ui/Ui-button.vue';
+import NotificationModal from '../ui/NotificationModal.vue';
 import { adminApi } from '../../api/admin';
+import { useNotification } from '../../composables/useModal';
 
 import type { MediaSize } from '../../api/client';
 
@@ -118,6 +128,7 @@ const formData = ref<VideoBlockContent>({
 
 const fileInput = ref<HTMLInputElement | null>(null);
 const uploading = ref(false);
+const notification = useNotification();
 
 const handleFileUpload = async (event: Event) => {
   const target = event.target as HTMLInputElement;
@@ -130,7 +141,7 @@ const handleFileUpload = async (event: Event) => {
     formData.value.url = url;
     emit('update:modelValue', { ...formData.value });
   } catch (error) {
-    alert(error instanceof Error ? error.message : 'Ошибка загрузки файла');
+    notification.error(error instanceof Error ? error.message : 'Ошибка загрузки файла');
   } finally {
     uploading.value = false;
     if (target) {

@@ -26,9 +26,10 @@ func (r *CommentRepository) scanRow(scanner interface {
 
 func (r *CommentRepository) ListAll() ([]*model.Comment, error) {
 	rows, err := r.store.db.Query(`
-		SELECT id, post_id, user_id, reply_to, text, is_admin, created_at
-		FROM comments
-		ORDER BY created_at DESC
+		SELECT c.id, c.post_id, c.user_id, c.reply_to, c.text, c.is_admin, c.created_at, u.email
+		FROM comments c
+		LEFT JOIN users u ON c.user_id = u.id
+		ORDER BY c.created_at DESC
 	`)
 	if err != nil {
 		return nil, err

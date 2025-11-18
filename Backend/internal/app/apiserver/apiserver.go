@@ -17,7 +17,10 @@ func Start(config *Config) error {
 
 	store := sqlstore.New(db)
 
-	mailerService, err := mailer.New(mailer.Config{
+	// Mailer опционален - если SMTP не настроен, приложение все равно работает
+	// но письма не будут отправляться
+	var mailerService *mailer.Mailer
+	mailerService, err = mailer.New(mailer.Config{
 		Host:     config.SMTP.Host,
 		Port:     config.SMTP.Port,
 		Username: config.SMTP.Username,
@@ -25,7 +28,9 @@ func Start(config *Config) error {
 		From:     config.SMTP.From,
 	})
 	if err != nil {
-		return err
+		// Логируем ошибку, но не останавливаем приложение
+		// Это позволит работать без SMTP в режиме разработки
+		mailerService = nil
 	}
 
 	srv := newServer(store, config.JWTSecret, mailerService, config.Admin.ResetURL, config.User.VerificationURL, config.UploadDir)

@@ -127,6 +127,14 @@
         <option :value="6">6 колонок</option>
       </select>
     </div>
+
+    <NotificationModal
+      :is-open="notification.isOpen.value"
+      :type="notification.options.value.type"
+      :title="notification.options.value.title"
+      :message="notification.options.value.message"
+      @close="notification.close"
+    />
   </div>
 </template>
 
@@ -134,7 +142,9 @@
 import { ref, watch } from 'vue';
 import UiInput from '../ui/Ui-input.vue';
 import UiButton from '../ui/Ui-button.vue';
+import NotificationModal from '../ui/NotificationModal.vue';
 import { adminApi } from '../../api/admin';
+import { useNotification } from '../../composables/useModal';
 
 import type { MediaSize } from '../../api/client';
 
@@ -171,6 +181,7 @@ const fileInputs = ref<(HTMLInputElement | null)[]>(
   new Array(props.modelValue?.images?.length || 0).fill(null)
 );
 const uploading = ref<Record<number, boolean>>({});
+const notification = useNotification();
 
 const addImage = () => {
   formData.value.images.push({
@@ -200,7 +211,7 @@ const handleFileUpload = async (index: number, event: Event) => {
       emit('update:modelValue', { ...formData.value });
     }
   } catch (error) {
-    alert(error instanceof Error ? error.message : 'Ошибка загрузки файла');
+    notification.error(error instanceof Error ? error.message : 'Ошибка загрузки файла');
   } finally {
     uploading.value[index] = false;
     if (target) {

@@ -59,45 +59,51 @@
       <p>Пока нет комментариев. Будьте первым!</p>
     </div>
     <div v-else class="space-y-4">
-      <div
-        v-for="(comment, index) in visibleComments"
-        :key="comment.id"
-        class="comment-item"
-      >
-        <CommentItem
-          :comment="comment"
-          :all-comments="comments"
-          :is-authenticated="isAuthenticated"
-          :is-admin="isAdmin"
-          @reply="handleReply"
-          @delete="handleDelete"
-          @user-click="handleUserClick"
-        />
-      </div>
-      
-      <div v-if="shouldShowLoadMore" class="pt-4 border-t border-gray-200">
-        <button
-          @click="showAllComments = true"
-          class="w-full px-4 py-3 text-sm sm:text-base font-medium text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 rounded-lg transition-colors flex items-center justify-center gap-2"
+      <TransitionGroup name="comment-fade" tag="div">
+        <div
+          v-for="(comment, index) in visibleComments"
+          :key="comment.id"
+          class="comment-item"
         >
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-          </svg>
-          Показать еще комментарии ({{ organizedComments.length - initialCommentsCount }})
-        </button>
-      </div>
+          <CommentItem
+            :comment="comment"
+            :all-comments="comments"
+            :is-authenticated="isAuthenticated"
+            :is-admin="isAdmin"
+            @reply="handleReply"
+            @delete="handleDelete"
+            @user-click="handleUserClick"
+          />
+        </div>
+      </TransitionGroup>
       
-      <div v-if="showAllComments && organizedComments.length > initialCommentsCount" class="pt-2 border-t border-gray-200">
-        <button
-          @click="showAllComments = false"
-          class="w-full px-4 py-2 text-sm text-gray-600 hover:text-gray-700 hover:bg-gray-50 rounded-lg transition-colors flex items-center justify-center gap-2"
-        >
-          <svg class="w-4 h-4 rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-          </svg>
-          Свернуть комментарии
-        </button>
-      </div>
+      <Transition name="slide-fade">
+        <div v-if="shouldShowLoadMore" class="pt-4 border-t border-gray-200">
+          <button
+            @click="showAllComments = true"
+            class="w-full px-4 py-3 text-sm sm:text-base font-medium text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 rounded-lg transition-colors flex items-center justify-center gap-2"
+          >
+            <svg class="w-5 h-5 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+            </svg>
+            Показать еще комментарии ({{ organizedComments.length - initialCommentsCount }})
+          </button>
+        </div>
+      </Transition>
+      
+      <Transition name="slide-fade">
+        <div v-if="showAllComments && organizedComments.length > initialCommentsCount" class="pt-2 border-t border-gray-200">
+          <button
+            @click="showAllComments = false"
+            class="w-full px-4 py-2 text-sm text-gray-600 hover:text-gray-700 hover:bg-gray-50 rounded-lg transition-colors flex items-center justify-center gap-2"
+          >
+            <svg class="w-4 h-4 rotate-180 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+            </svg>
+            Свернуть комментарии
+          </button>
+        </div>
+      </Transition>
     </div>
   </div>
 </template>
@@ -240,6 +246,48 @@ onMounted(() => {
 <style scoped>
 .post-comments {
   @apply w-full;
+}
+
+/* Анимация для кнопок "Показать еще" и "Свернуть" */
+.slide-fade-enter-active {
+  transition: all 0.3s ease-out;
+}
+
+.slide-fade-leave-active {
+  transition: all 0.25s ease-in;
+}
+
+.slide-fade-enter-from {
+  opacity: 0;
+  transform: translateY(-10px);
+}
+
+.slide-fade-leave-to {
+  opacity: 0;
+  transform: translateY(-10px);
+}
+
+/* Анимация для появления новых комментариев */
+.comment-fade-enter-active {
+  transition: all 0.4s ease-out;
+}
+
+.comment-fade-leave-active {
+  transition: all 0.3s ease-in;
+}
+
+.comment-fade-enter-from {
+  opacity: 0;
+  transform: translateY(10px);
+}
+
+.comment-fade-leave-to {
+  opacity: 0;
+  transform: translateY(-10px);
+}
+
+.comment-fade-move {
+  transition: transform 0.4s ease;
 }
 </style>
 

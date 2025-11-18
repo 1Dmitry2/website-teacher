@@ -42,7 +42,7 @@
           class="text-xs sm:text-sm text-indigo-600 hover:text-indigo-700 font-medium flex items-center gap-1.5 transition-colors"
         >
           <svg 
-            class="w-4 h-4 transition-transform duration-200"
+            class="w-4 h-4 transition-transform duration-300 ease-in-out"
             :class="{ 'rotate-180': !isCommentExpanded }"
             fill="none" 
             stroke="currentColor" 
@@ -50,12 +50,16 @@
           >
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
           </svg>
-          <span v-if="!isCommentExpanded">
-            Показать {{ replies.length }} {{ replies.length === 1 ? 'ответ' : replies.length < 5 ? 'ответа' : 'ответов' }}
-          </span>
-          <span v-else>
-            Скрыть ответы
-          </span>
+          <Transition name="fade" mode="out-in">
+            <span :key="isCommentExpanded">
+              <template v-if="!isCommentExpanded">
+                Показать {{ replies.length }} {{ replies.length === 1 ? 'ответ' : replies.length < 5 ? 'ответа' : 'ответов' }}
+              </template>
+              <template v-else>
+                Скрыть ответы
+              </template>
+            </span>
+          </Transition>
         </button>
       </div>
       
@@ -85,81 +89,97 @@
         </button>
       </div>
 
-      <div v-if="showReplyForm" class="mt-3 pt-3 border-t border-gray-200">
-        <textarea
-          v-model="replyText"
-          placeholder="Напишите ответ..."
-          rows="2"
-          class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 resize-none text-xs sm:text-sm"
-        ></textarea>
-        <div class="flex flex-col sm:flex-row justify-end gap-2 mt-2">
-          <button
-            @click="showReplyForm = false"
-            class="px-3 py-1.5 text-xs sm:text-sm text-gray-600 hover:text-gray-800 rounded-lg"
-          >
-            Отмена
-          </button>
-          <button
-            @click="submitReply"
-            :disabled="!replyText.trim()"
-            class="px-3 py-1.5 text-xs sm:text-sm bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            Отправить
-          </button>
+      <Transition name="slide-fade">
+        <div v-if="showReplyForm" class="mt-3 pt-3 border-t border-gray-200">
+          <textarea
+            v-model="replyText"
+            placeholder="Напишите ответ..."
+            rows="2"
+            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 resize-none text-xs sm:text-sm"
+          ></textarea>
+          <div class="flex flex-col sm:flex-row justify-end gap-2 mt-2">
+            <button
+              @click="showReplyForm = false"
+              class="px-3 py-1.5 text-xs sm:text-sm text-gray-600 hover:text-gray-800 rounded-lg"
+            >
+              Отмена
+            </button>
+            <button
+              @click="submitReply"
+              :disabled="!replyText.trim()"
+              class="px-3 py-1.5 text-xs sm:text-sm bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Отправить
+            </button>
+          </div>
         </div>
-      </div>
+      </Transition>
     </div>
 
-    <div v-if="replies.length > 0 && isCommentExpanded" class="ml-4 sm:ml-8 mt-3">
-      <div v-if="shouldShowCollapse && !isExpanded" class="mb-2">
-        <button
-          @click="isExpanded = true"
-          class="text-xs sm:text-sm text-indigo-600 hover:text-indigo-700 font-medium flex items-center gap-1"
-        >
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-          </svg>
-          Показать {{ replies.length }} {{ replies.length === 1 ? 'ответ' : replies.length < 5 ? 'ответа' : 'ответов' }}
-        </button>
-      </div>
-      
-      <div v-if="!shouldShowCollapse || isExpanded" class="space-y-3">
-        <div v-if="shouldShowCollapse && isExpanded" class="mb-2">
+    <Transition name="slide-down">
+      <div v-if="replies.length > 0 && isCommentExpanded" class="ml-4 sm:ml-8 mt-3">
+        <div v-if="shouldShowCollapse && !isExpanded" class="mb-2">
           <button
-            @click="isExpanded = false"
-            class="text-xs sm:text-sm text-indigo-600 hover:text-indigo-700 font-medium flex items-center gap-1"
+            @click="isExpanded = true"
+            class="text-xs sm:text-sm text-indigo-600 hover:text-indigo-700 font-medium flex items-center gap-1 transition-colors"
           >
-            <svg class="w-4 h-4 rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg class="w-4 h-4 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
             </svg>
-            Свернуть ответы
+            Показать {{ replies.length }} {{ replies.length === 1 ? 'ответ' : replies.length < 5 ? 'ответа' : 'ответов' }}
           </button>
         </div>
         
-        <div
-          v-for="reply in replies"
-          :key="reply.id"
-          class="relative"
-        >
-          <div v-if="reply.is_admin" class="absolute -left-2 top-0 bottom-0 w-1 bg-indigo-500 rounded-l"></div>
-          <CommentItem
-            :comment="reply"
-            :all-comments="allComments"
-            :is-authenticated="isAuthenticated"
-            :is-admin="isAdmin"
-            @reply="handleReply"
-            @delete="handleDelete"
-            @user-click="handleUserClickFromChild"
-          />
+        <div v-if="!shouldShowCollapse || isExpanded" class="space-y-3">
+          <div v-if="shouldShowCollapse && isExpanded" class="mb-2">
+            <button
+              @click="isExpanded = false"
+              class="text-xs sm:text-sm text-indigo-600 hover:text-indigo-700 font-medium flex items-center gap-1 transition-colors"
+            >
+              <svg class="w-4 h-4 rotate-180 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+              </svg>
+              Свернуть ответы
+            </button>
+          </div>
+          
+          <div
+            v-for="reply in replies"
+            :key="reply.id"
+            class="relative"
+          >
+            <div v-if="reply.is_admin" class="absolute -left-2 top-0 bottom-0 w-1 bg-indigo-500 rounded-l"></div>
+            <CommentItem
+              :comment="reply"
+              :all-comments="allComments"
+              :is-authenticated="isAuthenticated"
+              :is-admin="isAdmin"
+              @reply="handleReply"
+              @delete="handleDelete"
+              @user-click="handleUserClickFromChild"
+            />
+          </div>
         </div>
       </div>
-    </div>
+    </Transition>
   </div>
+
+  <ConfirmationModal
+    :is-open="confirmation.isOpen.value"
+    :title="confirmation.options.value.title"
+    :message="confirmation.options.value.message"
+    :confirm-text="confirmation.options.value.confirmText"
+    :confirm-variant="confirmation.options.value.confirmVariant"
+    @confirm="confirmation.handleConfirm"
+    @cancel="confirmation.handleCancel"
+  />
 </template>
 
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue';
 import { type Comment } from '../api/client';
+import ConfirmationModal from './ui/ConfirmationModal.vue';
+import { useConfirmation } from '../composables/useModal';
 
 const props = defineProps<{
   comment: Comment;
@@ -234,8 +254,15 @@ const handleUserClickFromChild = (userId: number) => {
   emit('user-click', userId);
 };
 
-const handleDeleteClick = () => {
-  if (confirm('Удалить этот комментарий?')) {
+const confirmation = useConfirmation();
+
+const handleDeleteClick = async () => {
+  const confirmed = await confirmation.confirm({
+    message: 'Удалить этот комментарий?',
+    confirmVariant: 'danger',
+    confirmText: 'Удалить',
+  });
+  if (confirmed) {
     emit('delete', props.comment.id);
   }
 };
@@ -258,6 +285,78 @@ const handleUserClick = () => {
 <style scoped>
 .comment-item {
   @apply w-full;
+}
+
+/* Анимация для формы ответа */
+.slide-fade-enter-active {
+  transition: all 0.3s ease-out;
+}
+
+.slide-fade-leave-active {
+  transition: all 0.25s ease-in;
+}
+
+.slide-fade-enter-from {
+  transform: translateY(-10px);
+  opacity: 0;
+}
+
+.slide-fade-leave-to {
+  transform: translateY(-10px);
+  opacity: 0;
+}
+
+/* Анимация для текста кнопки */
+.fade-enter-active {
+  transition: opacity 0.2s ease-in-out;
+}
+
+.fade-leave-active {
+  transition: opacity 0.15s ease-in-out;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+
+/* Анимация для раскрывающихся ответов */
+.slide-down-enter-active {
+  transition: max-height 0.5s cubic-bezier(0.4, 0, 0.2, 1),
+              opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+              transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
+}
+
+.slide-down-leave-active {
+  transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+              opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+              transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
+}
+
+.slide-down-enter-from {
+  max-height: 0;
+  opacity: 0;
+  transform: translateY(-10px);
+}
+
+.slide-down-enter-to {
+  max-height: 5000px;
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.slide-down-leave-from {
+  max-height: 5000px;
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.slide-down-leave-to {
+  max-height: 0;
+  opacity: 0;
+  transform: translateY(-10px);
 }
 </style>
 

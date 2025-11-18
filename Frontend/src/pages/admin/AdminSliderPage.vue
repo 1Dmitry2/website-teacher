@@ -80,6 +80,24 @@
         </div>
       </div>
     </Transition>
+
+    <ConfirmationModal
+      :is-open="confirmation.isOpen.value"
+      :title="confirmation.options.value.title"
+      :message="confirmation.options.value.message"
+      :confirm-text="confirmation.options.value.confirmText"
+      :confirm-variant="confirmation.options.value.confirmVariant"
+      @confirm="confirmation.handleConfirm"
+      @cancel="confirmation.handleCancel"
+    />
+
+    <NotificationModal
+      :is-open="notification.isOpen.value"
+      :type="notification.options.value.type"
+      :title="notification.options.value.title"
+      :message="notification.options.value.message"
+      @close="notification.close"
+    />
   </div>
 </template>
 
@@ -89,8 +107,11 @@ import { useRouter } from 'vue-router';
 import UiButton from '../../components/ui/Ui-button.vue';
 import UiInput from '../../components/ui/Ui-input.vue';
 import PageSelector from '../../components/ui/PageSelector.vue';
+import ConfirmationModal from '../../components/ui/ConfirmationModal.vue';
+import NotificationModal from '../../components/ui/NotificationModal.vue';
 import { adminApi, type SliderItem } from '../../api/admin';
 import { adminAuthService } from '../../utils/adminAuth';
+import { useConfirmation, useNotification } from '../../composables/useModal';
 
 const router = useRouter();
 const slider = ref<SliderItem[]>([]);
@@ -175,13 +196,21 @@ const editItem = (item: SliderItem) => {
   };
 };
 
+const confirmation = useConfirmation();
+const notification = useNotification();
+
 const deleteItem = async (id: string) => {
-  if (!confirm('Удалить этот элемент?')) return;
+  const confirmed = await confirmation.confirm({
+    message: 'Удалить этот элемент?',
+    confirmVariant: 'danger',
+    confirmText: 'Удалить',
+  });
+  if (!confirmed) return;
   try {
     await adminApi.deleteSliderItem(id);
     await fetchSlider();
   } catch (err) {
-    alert(err instanceof Error ? err.message : 'Ошибка удаления');
+    notification.error(err instanceof Error ? err.message : 'Ошибка удаления');
   }
 };
 
@@ -195,7 +224,7 @@ const saveItem = async () => {
     closeModal();
     await fetchSlider();
   } catch (err) {
-    alert(err instanceof Error ? err.message : 'Ошибка сохранения');
+    notification.error(err instanceof Error ? err.message : 'Ошибка сохранения');
   }
 };
 

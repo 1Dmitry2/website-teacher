@@ -80,12 +80,25 @@
       </div>
     </div>
   </Transition>
+
+  <ConfirmationModal
+    :is-open="confirmation.isOpen.value"
+    :title="confirmation.options.value.title"
+    :message="confirmation.options.value.message"
+    :confirm-text="confirmation.options.value.confirmText"
+    :confirm-variant="confirmation.options.value.confirmVariant"
+    :loading="confirmation.loading.value"
+    @confirm="confirmation.handleConfirm"
+    @cancel="confirmation.handleCancel"
+  />
 </template>
 
 <script setup lang="ts">
 import { ref, watch } from 'vue';
 import { apiClient } from '../api/client';
 import { adminApi } from '../api/admin';
+import ConfirmationModal from './ui/ConfirmationModal.vue';
+import { useConfirmation } from '../composables/useModal';
 
 interface Props {
   isOpen: boolean;
@@ -153,6 +166,8 @@ const fetchProfile = async () => {
   }
 };
 
+const confirmation = useConfirmation();
+
 const handleBan = async () => {
   if (!props.userId || !props.isAdmin || !profile.value) return;
   
@@ -161,9 +176,16 @@ const handleBan = async () => {
     ? `Забанить пользователя ${profile.value.email}?`
     : `Разбанить пользователя ${profile.value.email}?`;
   
-  if (!confirm(confirmMessage)) return;
+  const confirmed = await confirmation.confirm({
+    message: confirmMessage,
+    confirmVariant: newBannedStatus ? 'danger' : 'default',
+    confirmText: newBannedStatus ? 'Забанить' : 'Разбанить',
+  });
+  
+  if (!confirmed) return;
   
   banning.value = true;
+  confirmation.loading.value = true;
   try {
     await adminApi.banUser(props.userId, newBannedStatus);
     profile.value.banned = newBannedStatus;
@@ -171,6 +193,7 @@ const handleBan = async () => {
     error.value = err instanceof Error ? err.message : 'Ошибка при изменении статуса бана';
   } finally {
     banning.value = false;
+    confirmation.loading.value = false;
   }
 };
 

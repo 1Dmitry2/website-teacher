@@ -193,11 +193,17 @@ func (s *server) handleUsersCreate() gin.HandlerFunc {
 		}
 
 		// Отправляем письмо с верификацией
-		verificationLink := s.buildVerificationLink(verificationToken)
-		if err := s.mailer.SendVerificationEmail(u.Email, verificationLink); err != nil {
-			s.logger.WithError(err).Error("Failed to send verification email")
-			// Не возвращаем ошибку, чтобы пользователь мог зарегистрироваться
-			// Но логируем проблему
+		if s.mailer != nil {
+			verificationLink := s.buildVerificationLink(verificationToken)
+			if err := s.mailer.SendVerificationEmail(u.Email, verificationLink); err != nil {
+				s.logger.WithError(err).Error("Failed to send verification email")
+				// Не возвращаем ошибку, чтобы пользователь мог зарегистрироваться
+				// Но логируем проблему
+			} else {
+				s.logger.WithField("email", u.Email).Info("Verification email sent")
+			}
+		} else {
+			s.logger.Warn("Mailer not configured - verification email not sent. Please configure SMTP settings.")
 		}
 
 		token, err := GenerateToken(u.ID, TokenScopeUser, s.jwtSecret, userTokenTTL)
@@ -308,8 +314,14 @@ func (s *server) handleAdminForgotPassword() gin.HandlerFunc {
 			return
 		}
 
-		if err := s.mailer.SendResetPasswordEmail(admin.Email, s.buildResetLink(token)); err != nil {
-			s.error(c, http.StatusInternalServerError, err)
+		if s.mailer != nil {
+			if err := s.mailer.SendResetPasswordEmail(admin.Email, s.buildResetLink(token)); err != nil {
+				s.error(c, http.StatusInternalServerError, err)
+				return
+			}
+		} else {
+			s.logger.Warn("Mailer not configured - reset password email not sent")
+			s.error(c, http.StatusInternalServerError, errors.New("email service not configured"))
 			return
 		}
 
@@ -603,9 +615,15 @@ func (s *server) handleResendVerification() gin.HandlerFunc {
 		}
 
 		// Отправляем письмо с верификацией
-		verificationLink := s.buildVerificationLink(verificationToken)
-		if err := s.mailer.SendVerificationEmail(user.Email, verificationLink); err != nil {
-			s.error(c, http.StatusInternalServerError, err)
+		if s.mailer != nil {
+			verificationLink := s.buildVerificationLink(verificationToken)
+			if err := s.mailer.SendVerificationEmail(user.Email, verificationLink); err != nil {
+				s.error(c, http.StatusInternalServerError, err)
+				return
+			}
+		} else {
+			s.logger.Warn("Mailer not configured - verification email not sent")
+			s.error(c, http.StatusInternalServerError, errors.New("email service not configured"))
 			return
 		}
 

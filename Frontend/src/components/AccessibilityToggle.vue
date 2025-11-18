@@ -74,5 +74,35 @@ const { isAccessibilityMode, toggleAccessibilityMode } = useAccessibility();
   width: 1.5rem;
   height: 1.5rem;
 }
+
+/* Мобильная версия: только иконка на экранах меньше 400px */
+@media (max-width: 475px) {
+  .accessibility-toggle {
+    padding: 0.75rem;
+    min-width: 3rem;
+    min-height: 3rem;
+    justify-content: center;
+  }
+
+  .accessibility-toggle .text {
+    display: none;
+  }
+
+  .accessibility-toggle .icon {
+    width: 1.75rem;
+    height: 1.75rem;
+  }
+
+  .accessibility-mode .accessibility-toggle {
+    padding: 0.875rem;
+    min-width: 3.5rem;
+    min-height: 3.5rem;
+  }
+
+  .accessibility-mode .accessibility-toggle .icon {
+    width: 2rem;
+    height: 2rem;
+  }
+}
 </style>
 

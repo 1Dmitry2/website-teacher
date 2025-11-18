@@ -99,11 +99,21 @@ const onForm = async (e: Event) => {
     });
     
     authService.setToken(response.token);
-    success.value = 'Регистрация успешна! Перенаправление...';
     
+    // Показываем сообщение о необходимости проверить почту
+    if (response.message) {
+      success.value = response.message;
+    } else if (response.email_verified === false) {
+      success.value = 'Регистрация успешна! Пожалуйста, проверьте вашу почту для подтверждения email адреса.';
+    } else {
+      success.value = 'Регистрация успешна!';
+    }
+    
+    // Не делаем автоматический редирект, пусть пользователь прочитает сообщение
+    // Можно добавить кнопку "Перейти на главную" или сделать редирект через 5 секунд
     setTimeout(() => {
       router.push('/');
-    }, 1000);
+    }, 5000);
   } catch (err) {
     error.value = err instanceof Error ? err.message : 'Ошибка при регистрации. Возможно, такой email уже зарегистрирован.';
   } finally {

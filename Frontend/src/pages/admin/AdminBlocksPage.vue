@@ -169,6 +169,24 @@
         </div>
       </div>
     </Transition>
+
+    <ConfirmationModal
+      :is-open="confirmation.isOpen.value"
+      :title="confirmation.options.value.title"
+      :message="confirmation.options.value.message"
+      :confirm-text="confirmation.options.value.confirmText"
+      :confirm-variant="confirmation.options.value.confirmVariant"
+      @confirm="confirmation.handleConfirm"
+      @cancel="confirmation.handleCancel"
+    />
+
+    <NotificationModal
+      :is-open="notification.isOpen.value"
+      :type="notification.options.value.type"
+      :title="notification.options.value.title"
+      :message="notification.options.value.message"
+      @close="notification.close"
+    />
   </div>
 </template>
 
@@ -183,8 +201,11 @@ import BlockFormGallery from '../../components/blocks/BlockFormGallery.vue';
 import BlockFormVideo from '../../components/blocks/BlockFormVideo.vue';
 import BlockFormTextWithImage from '../../components/blocks/BlockFormTextWithImage.vue';
 import PageSelector from '../../components/ui/PageSelector.vue';
+import ConfirmationModal from '../../components/ui/ConfirmationModal.vue';
+import NotificationModal from '../../components/ui/NotificationModal.vue';
 import { adminApi, type Block } from '../../api/admin';
 import { adminAuthService } from '../../utils/adminAuth';
+import { useConfirmation, useNotification } from '../../composables/useModal';
 import type { TextBlockContent } from '../../components/blocks/BlockFormText.vue';
 import type { SliderBlockContent } from '../../components/blocks/BlockFormSlider.vue';
 import type { GalleryBlockContent } from '../../components/blocks/BlockFormGallery.vue';
@@ -339,13 +360,21 @@ const editBlock = (block: Block) => {
   initializeBlockContent(block.type, block.content);
 };
 
+const confirmation = useConfirmation();
+const notification = useNotification();
+
 const deleteBlock = async (id: string) => {
-  if (!confirm('Удалить этот блок?')) return;
+  const confirmed = await confirmation.confirm({
+    message: 'Удалить этот блок?',
+    confirmVariant: 'danger',
+    confirmText: 'Удалить',
+  });
+  if (!confirmed) return;
   try {
     await adminApi.deleteBlock(id);
     await fetchBlocks();
   } catch (err) {
-    alert(err instanceof Error ? err.message : 'Ошибка удаления');
+    notification.error(err instanceof Error ? err.message : 'Ошибка удаления');
   }
 };
 
@@ -369,7 +398,7 @@ const saveBlock = async () => {
     closeModal();
     await fetchBlocks();
   } catch (err) {
-    alert(err instanceof Error ? err.message : 'Ошибка сохранения');
+    notification.error(err instanceof Error ? err.message : 'Ошибка сохранения');
   }
 };
 
