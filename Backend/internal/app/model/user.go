@@ -1,11 +1,12 @@
 package model
 
 import (
+	"context"
 	"errors"
 	"net"
 	"strings"
-	"github.com/go-playground/validator/v10"
 	"time"
+	"github.com/go-playground/validator/v10"
 )
 
 type User struct {
@@ -74,6 +75,7 @@ func (u *User) SetPassword(password string) error {
 }
 
 // ValidateEmailDomain проверяет существование MX записей для домена email
+// Использует таймаут 5 секунд для DNS запросов, чтобы избежать зависаний
 func ValidateEmailDomain(email string) error {
 	parts := strings.Split(email, "@")
 	if len(parts) != 2 {
@@ -82,12 +84,23 @@ func ValidateEmailDomain(email string) error {
 	
 	domain := parts[1]
 	
-	// Проверяем MX записи
-	mxRecords, err := net.LookupMX(domain)
+	// Создаем контекст с таймаутом 5 секунд
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	
+	// Используем Resolver с таймаутом
+	resolver := &net.Resolver{}
+	
+	// Проверяем MX записи с таймаутом
+	mxRecords, err := resolver.LookupMX(ctx, domain)
 	if err != nil || len(mxRecords) == 0 {
 		// Если MX записей нет, проверяем A запись (некоторые домены используют A записи для почты)
-		_, err := net.LookupHost(domain)
+		_, err := resolver.LookupHost(ctx, domain)
 		if err != nil {
+			// Если таймаут - возвращаем более понятную ошибку
+			if ctx.Err() == context.DeadlineExceeded {
+				return errors.New("email domain validation timeout - please try again")
+			}
 			return errors.New("email domain does not exist or is not configured for email")
 		}
 	}

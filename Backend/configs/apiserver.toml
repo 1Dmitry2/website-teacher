@@ -1,6 +1,6 @@
 bind_addr = ":8080"
 log_level = "debug"
-database_url = "host=localhost dbname=restapi_dev sslmode=disable"
+database_url = "host=localhost dbname=restapi_dev user=medvedevdmitry sslmode=disable"
 jwt_secret = "your-super-secret-key-minimum-32-characters-long-for-security"
 upload_dir = "./uploads"
 
