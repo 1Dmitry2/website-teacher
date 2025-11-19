@@ -42,12 +42,16 @@ func (u *User) Validate() error {
 		return err
 	}
 	
-	// Дополнительная проверка существования email домена
+	// ВАЖНО: Проверка DNS отключена, так как она может вызывать зависания
+	// Проверка формата email выполняется через validator (тег "email")
+	// Если нужно включить проверку DNS, раскомментируйте код ниже:
+	/*
 	if u.Email != "" {
 		if err := ValidateEmailDomain(u.Email); err != nil {
 			return err
 		}
 	}
+	*/
 	
 	return nil
 }
