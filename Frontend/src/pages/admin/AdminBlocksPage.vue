@@ -29,7 +29,14 @@
           </thead>
           <tbody class="bg-white divide-y divide-gray-200">
             <tr v-for="block in blocks" :key="block.id" class="hover:bg-gray-50">
-              <td class="px-3 sm:px-6 py-4 whitespace-nowrap text-xs sm:text-sm text-gray-900 max-w-xs truncate sm:max-w-none sm:truncate-none">{{ block.page }}</td>
+              <td class="px-3 sm:px-6 py-4 text-xs sm:text-sm text-gray-900 max-w-xs truncate sm:max-w-none sm:truncate-none">
+                <div class="font-medium text-gray-900">
+                  {{ getPageDescription(block.page) }}
+                </div>
+                <div class="text-gray-500 text-xs">
+                  {{ block.page || '—' }}
+                </div>
+              </td>
               <td class="px-3 sm:px-6 py-4 whitespace-nowrap text-xs sm:text-sm text-gray-500 hidden sm:table-cell">{{ block.type }}</td>
               <td class="px-3 sm:px-6 py-4 whitespace-nowrap text-xs sm:text-sm text-gray-500 hidden md:table-cell">{{ block.display_order }}</td>
               <td class="px-3 sm:px-6 py-4 whitespace-nowrap text-xs sm:text-sm font-medium">
@@ -265,6 +272,13 @@ const availableRoutes = computed(() => {
     };
   });
 });
+
+const getPageDescription = (path?: string | null) => {
+  if (!path) {
+    return 'Страница не выбрана';
+  }
+  return routeDescriptions[path] || path;
+};
 
 const formData = ref({
   page: '',

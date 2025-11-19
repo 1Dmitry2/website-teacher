@@ -2,11 +2,11 @@
   <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
     <h1 class="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-800 mb-4 sm:mb-6">О себе</h1>
     
-    <PageBlocks />
+    <PageBlocks :has-additional-content="hasPosts" />
     
-    <PostsList />
+    <PostsList @has-content-change="handlePostsContentChange" />
     
-    <div v-if="!hasBlocks" class="prose max-w-none">
+    <div v-if="!hasPosts" class="prose max-w-none">
       <p class="text-gray-600">Здесь будет информация о преподавателе.</p>
     </div>
   </div>
@@ -17,7 +17,10 @@ import { ref } from 'vue';
 import PageBlocks from '../components/PageBlocks.vue';
 import PostsList from '../components/PostsList.vue';
 
-const hasBlocks = ref(false);
+const hasPosts = ref(false);
+const handlePostsContentChange = (value: boolean) => {
+  hasPosts.value = value;
+};
 </script>
 
 <style lang="scss" scoped>

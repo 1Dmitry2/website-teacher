@@ -90,7 +90,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from 'vue';
+import { nextTick, ref, watch } from 'vue';
 import UiInput from '../ui/Ui-input.vue';
 import UiButton from '../ui/Ui-button.vue';
 import NotificationModal from '../ui/NotificationModal.vue';
@@ -115,8 +115,12 @@ const emit = defineEmits<{
   'update:modelValue': [value: SliderBlockContent];
 }>();
 
+const cloneSlides = (slides?: SliderSlide[]) => {
+  return Array.isArray(slides) ? slides.map(slide => ({ ...slide })) : [];
+};
+
 const formData = ref<SliderBlockContent>({
-  slides: props.modelValue?.slides?.length ? [...props.modelValue.slides] : [],
+  slides: cloneSlides(props.modelValue?.slides),
 });
 
 const fileInputs = ref<(HTMLInputElement | null)[]>(
@@ -124,6 +128,7 @@ const fileInputs = ref<(HTMLInputElement | null)[]>(
 );
 const uploading = ref<Record<number, boolean>>({});
 const notification = useNotification();
+const syncingFromModel = ref(false);
 
 const addSlide = () => {
   formData.value.slides.push({
@@ -137,7 +142,6 @@ const addSlide = () => {
 const removeSlide = (index: number) => {
   formData.value.slides.splice(index, 1);
   fileInputs.value.splice(index, 1);
-  emit('update:modelValue', { ...formData.value });
 };
 
 const handleFileUpload = async (index: number, event: Event) => {
@@ -150,7 +154,6 @@ const handleFileUpload = async (index: number, event: Event) => {
     const url = await adminApi.uploadFile(file);
     if (formData.value.slides[index]) {
       formData.value.slides[index].image = url;
-      emit('update:modelValue', { ...formData.value });
     }
   } catch (error) {
     notification.error(error instanceof Error ? error.message : 'Ошибка загрузки файла');
@@ -163,16 +166,26 @@ const handleFileUpload = async (index: number, event: Event) => {
 };
 
 watch(formData, (newVal) => {
-  emit('update:modelValue', { ...newVal });
+  if (syncingFromModel.value) {
+    return;
+  }
+  emit('update:modelValue', {
+    slides: cloneSlides(newVal.slides),
+  });
 }, { deep: true });
 
 watch(() => props.modelValue, (newVal) => {
-  if (newVal && newVal.slides) {
-    formData.value = {
-      slides: [...newVal.slides],
-    };
-    fileInputs.value = new Array(newVal.slides.length).fill(null);
+  if (!newVal) {
+    return;
   }
+  syncingFromModel.value = true;
+  formData.value = {
+    slides: cloneSlides(newVal.slides),
+  };
+  fileInputs.value = Array.from({ length: formData.value.slides.length }, () => null);
+  nextTick(() => {
+    syncingFromModel.value = false;
+  });
 }, { deep: true });
 </script>
 

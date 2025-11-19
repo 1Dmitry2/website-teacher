@@ -22,9 +22,14 @@
 </template>
 
 <script setup lang="ts">
+import { watch } from 'vue';
 import { usePosts } from '../composables/usePosts';
 import { type Post } from '../api/client';
 import PostContent from './PostContent.vue';
+
+const emit = defineEmits<{
+  (e: 'has-content-change', hasContent: boolean): void;
+}>();
 
 const { filteredPosts, loading, error } = usePosts();
 
@@ -40,6 +45,14 @@ const getPostAlignmentClass = (post: Post) => {
   };
   return alignmentMap[alignment as keyof typeof alignmentMap] || 'w-full';
 };
+
+watch([filteredPosts, loading], () => {
+  if (loading.value) {
+    emit('has-content-change', false);
+    return;
+  }
+  emit('has-content-change', filteredPosts.value.length > 0);
+}, { immediate: true });
 </script>
 
 <style scoped>

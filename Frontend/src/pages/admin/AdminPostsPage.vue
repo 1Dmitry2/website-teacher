@@ -241,10 +241,6 @@
                 </select>
               </div>
             </div>
-            <div class="flex items-center gap-2">
-              <input type="checkbox" v-model="formData.is_published" id="published" class="w-4 h-4 text-indigo-600 border-gray-300 rounded" />
-              <label for="published" class="text-sm font-medium text-gray-700">Опубликовать</label>
-            </div>
           </form>
           <div class="px-4 sm:px-6 py-4 border-t border-gray-200 flex flex-col sm:flex-row gap-2 justify-end flex-shrink-0">
             <ui-button type="button" variant="secondary" @click="closeModal">Отмена</ui-button>
@@ -349,7 +345,7 @@ const formData = ref({
   images: [] as MediaItem[],
   videos: [] as MediaItem[],
   pages: [] as string[],
-  is_published: false,
+  is_published: true,
   alignment: 'full-width' as 'left' | 'center' | 'right' | 'full-width',
   title_position: 'top' as 'top' | 'bottom' | 'left' | 'right',
   content_position: 'bottom' as 'top' | 'bottom' | 'left' | 'right',
@@ -401,7 +397,7 @@ const editPost = (post: Post) => {
     images: normalizeMedia(post.images || []),
     videos: normalizeMedia(post.videos || []),
     pages: post.pages || [],
-    is_published: post.is_published,
+    is_published: post.is_published ?? true,
     alignment: post.alignment || 'full-width',
     title_position: post.title_position || 'top',
     content_position: post.content_position || 'bottom',
@@ -433,6 +429,7 @@ const savePost = async () => {
       images: formData.value.images.map(img => typeof img === 'string' ? img : img.url),
       videos: formData.value.videos.map(vid => typeof vid === 'string' ? vid : vid.url),
     };
+    postData.is_published = true;
     
     if (editingPost.value) {
       await adminApi.updatePost(editingPost.value.id, postData);
@@ -533,7 +530,7 @@ const closeModal = () => {
     images: [],
     videos: [],
     pages: [],
-    is_published: false,
+    is_published: true,
     alignment: 'full-width',
     title_position: 'top',
     content_position: 'bottom',
