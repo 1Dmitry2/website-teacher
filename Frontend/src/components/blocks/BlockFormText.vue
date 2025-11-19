@@ -49,7 +49,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from 'vue';
+import { nextTick, ref, watch } from 'vue';
 import UiInput from '../ui/Ui-input.vue';
 
 export interface TextBlockContent {
@@ -74,14 +74,24 @@ const formData = ref<TextBlockContent>({
   style: props.modelValue?.style || 'regular',
 });
 
+const syncingFromModel = ref(false);
+
 watch(formData, (newVal) => {
+  if (syncingFromModel.value) {
+    return;
+  }
   emit('update:modelValue', { ...newVal });
 }, { deep: true });
 
 watch(() => props.modelValue, (newVal) => {
-  if (newVal) {
-    formData.value = { ...newVal };
+  if (!newVal) {
+    return;
   }
+  syncingFromModel.value = true;
+  formData.value = { ...newVal };
+  nextTick(() => {
+    syncingFromModel.value = false;
+  });
 }, { deep: true });
 </script>
 

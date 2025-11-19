@@ -117,7 +117,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from 'vue';
+import { nextTick, ref, watch } from 'vue';
 import UiInput from '../ui/Ui-input.vue';
 import UiButton from '../ui/Ui-button.vue';
 import NotificationModal from '../ui/NotificationModal.vue';
@@ -157,6 +157,7 @@ const formData = ref<TextWithImageBlockContent>({
 const fileInput = ref<HTMLInputElement | null>(null);
 const uploading = ref(false);
 const notification = useNotification();
+const syncingFromModel = ref(false);
 
 const handleFileUpload = async (event: Event) => {
   const target = event.target as HTMLInputElement;
@@ -179,13 +180,21 @@ const handleFileUpload = async (event: Event) => {
 };
 
 watch(formData, (newVal) => {
+  if (syncingFromModel.value) {
+    return;
+  }
   emit('update:modelValue', { ...newVal });
 }, { deep: true });
 
 watch(() => props.modelValue, (newVal) => {
-  if (newVal) {
-    formData.value = { ...newVal };
+  if (!newVal) {
+    return;
   }
+  syncingFromModel.value = true;
+  formData.value = { ...newVal };
+  nextTick(() => {
+    syncingFromModel.value = false;
+  });
 }, { deep: true });
 </script>
 

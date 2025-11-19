@@ -139,7 +139,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from 'vue';
+import { nextTick, ref, watch } from 'vue';
 import UiInput from '../ui/Ui-input.vue';
 import UiButton from '../ui/Ui-button.vue';
 import NotificationModal from '../ui/NotificationModal.vue';
@@ -182,6 +182,7 @@ const fileInputs = ref<(HTMLInputElement | null)[]>(
 );
 const uploading = ref<Record<number, boolean>>({});
 const notification = useNotification();
+const syncingFromModel = ref(false);
 
 const addImage = () => {
   formData.value.images.push({
@@ -245,16 +246,26 @@ const moveDown = (index: number) => {
 };
 
 watch(formData, (newVal) => {
+  if (syncingFromModel.value) {
+    return;
+  }
   emit('update:modelValue', { ...newVal });
 }, { deep: true });
 
 watch(() => props.modelValue, (newVal) => {
-  if (newVal && newVal.images) {
-    formData.value = {
-      images: [...newVal.images],
-    };
-    fileInputs.value = new Array(newVal.images.length).fill(null);
+  if (!newVal || !newVal.images) {
+    return;
   }
+  syncingFromModel.value = true;
+  formData.value = {
+    images: [...newVal.images],
+    layout: newVal.layout || 'grid',
+    columns: newVal.columns || 3,
+  };
+  fileInputs.value = new Array(newVal.images.length).fill(null);
+  nextTick(() => {
+    syncingFromModel.value = false;
+  });
 }, { deep: true });
 </script>
 
