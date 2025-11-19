@@ -26,6 +26,7 @@ type AdminConfig struct {
 
 type UserConfig struct {
 	VerificationURL string `toml:"verification_url"`
+	ResetURL       string `toml:"reset_url"`
 }
 
 func NewConfig() *Config {
@@ -39,6 +40,7 @@ func NewConfig() *Config {
 		},
 		User: UserConfig{
 			VerificationURL: "http://localhost:5173/verify-email?token=",
+			ResetURL:        "http://localhost:5173/reset-password?token=",
 		},
 	}
 }

@@ -30,48 +30,66 @@ func (r *UserRepository) Create(u *model.User) error {
 
 func (r *UserRepository) FindByEmail(email string) (*model.User, error) {
 	u := &model.User{}
-	var token sql.NullString
-	var tokenExpires sql.NullTime
+	var emailToken sql.NullString
+	var emailTokenExpires sql.NullTime
+	var resetToken sql.NullString
+	var resetTokenExpires sql.NullTime
 	if err := r.store.db.QueryRow(
-		"SELECT id, email, encrypted_password, is_admin, banned, email_verified, email_verification_token, email_verification_token_expires, created_at, updated_at FROM users WHERE email = $1", email,
+		"SELECT id, email, encrypted_password, is_admin, banned, email_verified, email_verification_token, email_verification_token_expires, reset_token, reset_token_expires, created_at, updated_at FROM users WHERE email = $1", email,
 	).Scan(
-		&u.ID, &u.Email, &u.EncryptedPassword, &u.IsAdmin, &u.Banned, &u.EmailVerified, &token, &tokenExpires, &u.CreatedAt, &u.UpdatedAt,
+		&u.ID, &u.Email, &u.EncryptedPassword, &u.IsAdmin, &u.Banned, &u.EmailVerified, &emailToken, &emailTokenExpires, &resetToken, &resetTokenExpires, &u.CreatedAt, &u.UpdatedAt,
 	); err != nil {
 		if err == sql.ErrNoRows {
 			return nil, store.ErrRecordNotFound
 		}
 		return nil, err
 	}
-	if token.Valid {
-		tokenStr := token.String
+	if emailToken.Valid {
+		tokenStr := emailToken.String
 		u.EmailVerificationToken = &tokenStr
 	}
-	if tokenExpires.Valid {
-		u.EmailVerificationTokenExpires = &tokenExpires.Time
+	if emailTokenExpires.Valid {
+		u.EmailVerificationTokenExpires = &emailTokenExpires.Time
+	}
+	if resetToken.Valid {
+		tokenStr := resetToken.String
+		u.ResetToken = &tokenStr
+	}
+	if resetTokenExpires.Valid {
+		u.ResetTokenExpires = &resetTokenExpires.Time
 	}
 	return u, nil
 }
 
 func (r *UserRepository) FindByID(id int) (*model.User, error) {
 	u := &model.User{}
-	var token sql.NullString
-	var tokenExpires sql.NullTime
+	var emailToken sql.NullString
+	var emailTokenExpires sql.NullTime
+	var resetToken sql.NullString
+	var resetTokenExpires sql.NullTime
 	if err := r.store.db.QueryRow(
-		"SELECT id, email, encrypted_password, is_admin, banned, email_verified, email_verification_token, email_verification_token_expires, created_at, updated_at FROM users WHERE id = $1", id,
+		"SELECT id, email, encrypted_password, is_admin, banned, email_verified, email_verification_token, email_verification_token_expires, reset_token, reset_token_expires, created_at, updated_at FROM users WHERE id = $1", id,
 	).Scan(
-		&u.ID, &u.Email, &u.EncryptedPassword, &u.IsAdmin, &u.Banned, &u.EmailVerified, &token, &tokenExpires, &u.CreatedAt, &u.UpdatedAt,
+		&u.ID, &u.Email, &u.EncryptedPassword, &u.IsAdmin, &u.Banned, &u.EmailVerified, &emailToken, &emailTokenExpires, &resetToken, &resetTokenExpires, &u.CreatedAt, &u.UpdatedAt,
 	); err != nil {
 		if err == sql.ErrNoRows {
 			return nil, store.ErrRecordNotFound
 		}
 		return nil, err
 	}
-	if token.Valid {
-		tokenStr := token.String
+	if emailToken.Valid {
+		tokenStr := emailToken.String
 		u.EmailVerificationToken = &tokenStr
 	}
-	if tokenExpires.Valid {
-		u.EmailVerificationTokenExpires = &tokenExpires.Time
+	if emailTokenExpires.Valid {
+		u.EmailVerificationTokenExpires = &emailTokenExpires.Time
+	}
+	if resetToken.Valid {
+		tokenStr := resetToken.String
+		u.ResetToken = &tokenStr
+	}
+	if resetTokenExpires.Valid {
+		u.ResetTokenExpires = &resetTokenExpires.Time
 	}
 	return u, nil
 }
@@ -143,4 +161,61 @@ func (r *UserRepository) GetCommentsCount(userID int) (int, error) {
 	var count int
 	err := r.store.db.QueryRow(`SELECT COUNT(*) FROM comments WHERE user_id = $1`, userID).Scan(&count)
 	return count, err
+}
+
+func (r *UserRepository) FindByResetToken(token string) (*model.User, error) {
+	u := &model.User{}
+	var emailToken sql.NullString
+	var emailTokenExpires sql.NullTime
+	var resetToken sql.NullString
+	var resetTokenExpires sql.NullTime
+	if err := r.store.db.QueryRow(
+		"SELECT id, email, encrypted_password, is_admin, banned, email_verified, email_verification_token, email_verification_token_expires, reset_token, reset_token_expires, created_at, updated_at FROM users WHERE reset_token = $1", token,
+	).Scan(
+		&u.ID, &u.Email, &u.EncryptedPassword, &u.IsAdmin, &u.Banned, &u.EmailVerified, &emailToken, &emailTokenExpires, &resetToken, &resetTokenExpires, &u.CreatedAt, &u.UpdatedAt,
+	); err != nil {
+		if err == sql.ErrNoRows {
+			return nil, store.ErrRecordNotFound
+		}
+		return nil, err
+	}
+	if emailToken.Valid {
+		tokenStr := emailToken.String
+		u.EmailVerificationToken = &tokenStr
+	}
+	if emailTokenExpires.Valid {
+		u.EmailVerificationTokenExpires = &emailTokenExpires.Time
+	}
+	if resetToken.Valid {
+		tokenStr := resetToken.String
+		u.ResetToken = &tokenStr
+	}
+	if resetTokenExpires.Valid {
+		u.ResetTokenExpires = &resetTokenExpires.Time
+	}
+	return u, nil
+}
+
+func (r *UserRepository) SaveResetToken(userID int, token string, expires time.Time) error {
+	_, err := r.store.db.Exec(
+		`UPDATE users SET reset_token = $1, reset_token_expires = $2, updated_at = now() WHERE id = $3`,
+		token, expires, userID,
+	)
+	return err
+}
+
+func (r *UserRepository) UpdatePassword(userID int, passwordHash string) error {
+	_, err := r.store.db.Exec(
+		`UPDATE users SET encrypted_password = $1, updated_at = now() WHERE id = $2`,
+		passwordHash, userID,
+	)
+	return err
+}
+
+func (r *UserRepository) ClearResetToken(userID int) error {
+	_, err := r.store.db.Exec(
+		`UPDATE users SET reset_token = NULL, reset_token_expires = NULL, updated_at = now() WHERE id = $1`,
+		userID,
+	)
+	return err
 }

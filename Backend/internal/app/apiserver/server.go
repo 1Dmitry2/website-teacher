@@ -43,20 +43,22 @@ type server struct {
 	store             store.Store
 	jwtSecret         string
 	mailer            *mailer.Mailer
-	passwordResetURL  string
+	adminResetURL     string
+	userResetURL      string
 	verificationURL   string
 	uploadDir         string
 	corsOrigins       []string
 }
 
-func newServer(store store.Store, jwtSecret string, mailer *mailer.Mailer, passwordResetURL string, verificationURL string, uploadDir string, corsOrigins []string) *server {
+func newServer(store store.Store, jwtSecret string, mailer *mailer.Mailer, adminResetURL string, verificationURL string, userResetURL string, uploadDir string, corsOrigins []string) *server {
 	s := &server{
 		router:            gin.Default(),
 		logger:            logrus.New(),
 		store:             store,
 		jwtSecret:         jwtSecret,
 		mailer:            mailer,
-		passwordResetURL:  passwordResetURL,
+		adminResetURL:     adminResetURL,
+		userResetURL:      userResetURL,
 		verificationURL:   verificationURL,
 		uploadDir:         uploadDir,
 		corsOrigins:       corsOrigins,
@@ -100,6 +102,8 @@ func (s *server) configureRouter() {
 	s.router.POST("/sessions", s.handleSessionsCreate())
 	s.router.POST("/verify-email", s.handleVerifyEmail())
 	s.router.POST("/resend-verification", s.handleResendVerification())
+	s.router.POST("/forgot-password", s.handleUserForgotPassword())
+	s.router.POST("/reset-password", s.handleUserResetPassword())
 	s.router.GET("/pages/*page", s.handlePublicPageBlocks())
 	s.router.GET("/posts", s.handlePublicPostsList())
 	s.router.GET("/posts/:id", s.handlePublicPostDetail())
@@ -323,7 +327,7 @@ func (s *server) handleAdminForgotPassword() gin.HandlerFunc {
 		}
 
 		if s.mailer != nil {
-			if err := s.mailer.SendResetPasswordEmail(admin.Email, s.buildResetLink(token)); err != nil {
+			if err := s.mailer.SendResetPasswordEmail(admin.Email, s.buildAdminResetLink(token)); err != nil {
 				s.error(c, http.StatusInternalServerError, err)
 				return
 			}
@@ -521,11 +525,18 @@ func generateResetToken() (string, error) {
 	return hex.EncodeToString(buffer), nil
 }
 
-func (s *server) buildResetLink(token string) string {
-	if strings.Contains(s.passwordResetURL, "%s") {
-		return fmt.Sprintf(s.passwordResetURL, token)
+func (s *server) buildAdminResetLink(token string) string {
+	if strings.Contains(s.adminResetURL, "%s") {
+		return fmt.Sprintf(s.adminResetURL, token)
 	}
-	return fmt.Sprintf("%s%s", s.passwordResetURL, token)
+	return fmt.Sprintf("%s%s", s.adminResetURL, token)
+}
+
+func (s *server) buildUserResetLink(token string) string {
+	if strings.Contains(s.userResetURL, "%s") {
+		return fmt.Sprintf(s.userResetURL, token)
+	}
+	return fmt.Sprintf("%s%s", s.userResetURL, token)
 }
 
 func (s *server) buildVerificationLink(token string) string {
@@ -636,6 +647,109 @@ func (s *server) handleResendVerification() gin.HandlerFunc {
 		}
 
 		s.respond(c, map[string]string{"status": "if the email exists, verification email was sent"}, http.StatusOK)
+	}
+}
+
+func (s *server) handleUserForgotPassword() gin.HandlerFunc {
+	type request struct {
+		Email string `json:"email"`
+	}
+
+	return func(c *gin.Context) {
+		req := &request{}
+		if err := json.NewDecoder(c.Request.Body).Decode(req); err != nil {
+			s.error(c, http.StatusBadRequest, err)
+			return
+		}
+
+		user, err := s.store.User().FindByEmail(req.Email)
+		if err != nil {
+			if errors.Is(err, store.ErrRecordNotFound) {
+				s.logger.WithField("email", req.Email).Warn("password reset requested for unknown user")
+				s.respond(c, map[string]string{"status": "if the email exists, instructions were sent"}, http.StatusOK)
+				return
+			}
+			s.error(c, http.StatusInternalServerError, err)
+			return
+		}
+
+		token, err := generateResetToken()
+		if err != nil {
+			s.error(c, http.StatusInternalServerError, err)
+			return
+		}
+
+		if err := s.store.User().SaveResetToken(user.ID, token, time.Now().Add(resetTokenTTL)); err != nil {
+			s.error(c, http.StatusInternalServerError, err)
+			return
+		}
+
+		if s.mailer != nil {
+			if err := s.mailer.SendUserResetPasswordEmail(user.Email, s.buildUserResetLink(token)); err != nil {
+				s.logger.WithError(err).Error("Failed to send reset password email")
+				// Не возвращаем ошибку, чтобы не раскрывать существование пользователя
+				// Но логируем проблему
+			} else {
+				s.logger.WithField("email", user.Email).Info("Reset password email sent")
+			}
+		} else {
+			s.logger.Warn("Mailer not configured - reset password email not sent. Please configure SMTP settings.")
+			// Не возвращаем ошибку, чтобы не раскрывать существование пользователя
+		}
+
+		s.respond(c, map[string]string{"status": "if the email exists, instructions were sent"}, http.StatusOK)
+	}
+}
+
+func (s *server) handleUserResetPassword() gin.HandlerFunc {
+	type request struct {
+		Token       string `json:"token"`
+		NewPassword string `json:"new_password"`
+	}
+
+	return func(c *gin.Context) {
+		req := &request{}
+		if err := json.NewDecoder(c.Request.Body).Decode(req); err != nil {
+			s.error(c, http.StatusBadRequest, err)
+			return
+		}
+
+		if req.Token == "" || req.NewPassword == "" {
+			s.error(c, http.StatusBadRequest, errors.New("token and new_password are required"))
+			return
+		}
+
+		user, err := s.store.User().FindByResetToken(req.Token)
+		if err != nil {
+			if errors.Is(err, store.ErrRecordNotFound) {
+				s.error(c, http.StatusBadRequest, errInvalidResetToken)
+				return
+			}
+			s.error(c, http.StatusInternalServerError, err)
+			return
+		}
+
+		if user.ResetTokenExpires == nil || time.Now().After(*user.ResetTokenExpires) {
+			s.error(c, http.StatusBadRequest, errExpiredResetToken)
+			return
+		}
+
+		if err := user.SetPassword(req.NewPassword); err != nil {
+			s.error(c, http.StatusBadRequest, err)
+			return
+		}
+
+		if err := s.store.User().UpdatePassword(user.ID, user.EncryptedPassword); err != nil {
+			s.error(c, http.StatusInternalServerError, err)
+			return
+		}
+
+		if err := s.store.User().ClearResetToken(user.ID); err != nil {
+			s.error(c, http.StatusInternalServerError, err)
+			return
+		}
+
+		s.respond(c, map[string]string{"status": "password updated"}, http.StatusOK)
 	}
 }
 

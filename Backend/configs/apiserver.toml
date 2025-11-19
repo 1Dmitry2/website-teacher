@@ -16,3 +16,4 @@ reset_url = "http://localhost:5173/admin/reset?token="
 
 [user]
 verification_url = "http://localhost:5173/verify-email?token="
+reset_url = "http://localhost:5173/reset-password?token="

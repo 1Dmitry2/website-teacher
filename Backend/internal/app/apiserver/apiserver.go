@@ -33,7 +33,7 @@ func Start(config *Config) error {
 		mailerService = nil
 	}
 
-	srv := newServer(store, config.JWTSecret, mailerService, config.Admin.ResetURL, config.User.VerificationURL, config.UploadDir, config.CORSOrigins)
+	srv := newServer(store, config.JWTSecret, mailerService, config.Admin.ResetURL, config.User.VerificationURL, config.User.ResetURL, config.UploadDir, config.CORSOrigins)
 	return http.ListenAndServe(config.BindAddr, srv)
 }
 

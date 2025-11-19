@@ -74,6 +74,11 @@ func main() {
 		config.User.VerificationURL = userVerificationURL
 	}
 	
+	// User reset URL from environment
+	if userResetURL := os.Getenv("USER_RESET_URL"); userResetURL != "" {
+		config.User.ResetURL = userResetURL
+	}
+	
 	if err := apiserver.Start(config); err != nil {
 		log.Fatal(err)
 	}
