@@ -33,6 +33,7 @@ services:
       - SMTP_FROM=${SMTP_FROM:-}
       - ADMIN_RESET_URL=${ADMIN_RESET_URL:-http://localhost/admin/reset?token=}
       - USER_VERIFICATION_URL=${USER_VERIFICATION_URL:-http://localhost/verify-email?token=}
+      - USER_RESET_URL=${USER_RESET_URL:-http://localhost/reset-password?token=}
       - CORS_ORIGINS=${CORS_ORIGINS:-http://localhost:5173,http://127.0.0.1:5173,http://localhost}
       - UPLOAD_DIR=/root/uploads
     volumes:
