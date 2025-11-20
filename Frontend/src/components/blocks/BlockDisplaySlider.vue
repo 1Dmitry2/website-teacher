@@ -40,7 +40,10 @@
         </svg>
       </button>
       
-      <div v-if="content.slides.length > 1" class="absolute bottom-2 sm:bottom-4 left-1/2 transform -translate-x-1/2 flex gap-1.5 sm:gap-2">
+      <div
+        v-if="content.slides.length > 1"
+        class="absolute bottom-2 sm:bottom-4 left-1/2 transform -translate-x-1/2 hidden sm:flex gap-1.5 sm:gap-2"
+      >
         <button
           v-for="(_, index) in content.slides"
           :key="index"
