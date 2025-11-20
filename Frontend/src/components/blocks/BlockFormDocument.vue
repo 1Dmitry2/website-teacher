@@ -137,13 +137,13 @@ import { useNotification } from '../../composables/useModal';
 
 export interface DocumentBlockContent {
   title: string;
-  description?: string;
+  description: string;
   fileUrl: string;
-  fileName?: string;
+  fileName: string;
   mode: 'download' | 'viewer';
-  viewerLayout?: 'full' | 'preview';
-  previewHeight?: number;
-  showDownloadButton?: boolean;
+  viewerLayout: 'full' | 'preview';
+  previewHeight: number;
+  showDownloadButton: boolean;
 }
 
 const props = defineProps<{
