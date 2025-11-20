@@ -109,8 +109,16 @@
                   @click="selectBlockType('text-with-image')"
                   class="p-4 border-2 border-gray-300 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition-all text-left"
                 >
-                  <div class="text-2xl mb-2">📄</div>
+                  <div class="text-2xl mb-2">🖼</div>
                   <div class="font-medium text-gray-900">Текст с изображением</div>
+                </button>
+                <button
+                  type="button"
+                  @click="selectBlockType('document')"
+                  class="p-4 border-2 border-gray-300 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition-all text-left"
+                >
+                  <div class="text-2xl mb-2">📑</div>
+                  <div class="font-medium text-gray-900">Документ</div>
                 </button>
               </div>
             </div>
@@ -162,6 +170,11 @@
                   v-if="formData.type === 'text-with-image' && blockContent"
                   v-model="blockContent as TextWithImageBlockContent"
                 />
+
+                <BlockFormDocument
+                  v-if="formData.type === 'document' && blockContent"
+                  v-model="blockContent as DocumentBlockContent"
+                />
               </div>
             </form>
           </div>
@@ -207,6 +220,7 @@ import BlockFormSlider from '../../components/blocks/BlockFormSlider.vue';
 import BlockFormGallery from '../../components/blocks/BlockFormGallery.vue';
 import BlockFormVideo from '../../components/blocks/BlockFormVideo.vue';
 import BlockFormTextWithImage from '../../components/blocks/BlockFormTextWithImage.vue';
+import BlockFormDocument from '../../components/blocks/BlockFormDocument.vue';
 import PageSelector from '../../components/ui/PageSelector.vue';
 import ConfirmationModal from '../../components/ui/ConfirmationModal.vue';
 import NotificationModal from '../../components/ui/NotificationModal.vue';
@@ -218,6 +232,7 @@ import type { SliderBlockContent } from '../../components/blocks/BlockFormSlider
 import type { GalleryBlockContent } from '../../components/blocks/BlockFormGallery.vue';
 import type { VideoBlockContent } from '../../components/blocks/BlockFormVideo.vue';
 import type { TextWithImageBlockContent } from '../../components/blocks/BlockFormTextWithImage.vue';
+import type { DocumentBlockContent } from '../../components/blocks/BlockFormDocument.vue';
 
 const router = useRouter();
 const blocks = ref<Block[]>([]);
@@ -226,7 +241,7 @@ const error = ref('');
 const showCreateModal = ref(false);
 const editingBlock = ref<Block | null>(null);
 const selectedBlockType = ref<Block['type'] | null>(null);
-const blockContent = ref<TextBlockContent | SliderBlockContent | GalleryBlockContent | VideoBlockContent | TextWithImageBlockContent | null>(null);
+const blockContent = ref<TextBlockContent | SliderBlockContent | GalleryBlockContent | VideoBlockContent | TextWithImageBlockContent | DocumentBlockContent | null>(null);
 
 const routeDescriptions: Record<string, string> = {
   '/': 'Главная страница (Новости)',
@@ -329,6 +344,18 @@ const initializeBlockContent = (type: Block['type'], existingContent?: Record<st
         style: content.style || 'regular',
         imageSize: content.imageSize || 'medium',
       } as TextWithImageBlockContent;
+      break;
+    case 'document':
+      blockContent.value = {
+        title: content.title || '',
+        description: content.description || '',
+        fileUrl: content.fileUrl || '',
+        fileName: content.fileName || '',
+        mode: content.mode || 'download',
+        viewerLayout: content.viewerLayout || 'full',
+        previewHeight: content.previewHeight || 480,
+        showDownloadButton: content.showDownloadButton ?? true,
+      } as DocumentBlockContent;
       break;
   }
 };

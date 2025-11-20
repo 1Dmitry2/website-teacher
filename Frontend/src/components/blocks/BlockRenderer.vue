@@ -20,6 +20,10 @@
       v-else-if="block.type === 'text-with-image' && parsedContent"
       :content="parsedContent as any"
     />
+    <BlockDisplayDocument
+      v-else-if="block.type === 'document' && parsedContent"
+      :content="parsedContent as any"
+    />
   </div>
 </template>
 
@@ -30,12 +34,13 @@ import BlockDisplaySlider from './BlockDisplaySlider.vue';
 import BlockDisplayGallery from './BlockDisplayGallery.vue';
 import BlockDisplayVideo from './BlockDisplayVideo.vue';
 import BlockDisplayTextWithImage from './BlockDisplayTextWithImage.vue';
+import BlockDisplayDocument from './BlockDisplayDocument.vue';
 
 export interface Block {
   id: string;
   page: string;
   pages: string[];
-  type: 'text' | 'slider' | 'gallery' | 'video' | 'text-with-image';
+  type: 'text' | 'slider' | 'gallery' | 'video' | 'text-with-image' | 'document';
   content: Record<string, any> | string;
   display_order: number;
   created_at: string;

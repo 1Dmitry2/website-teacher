@@ -1697,6 +1697,48 @@ func (s *server) ensureAdminUser(adminID int) (int, error) {
 	return user.ID, nil
 }
 
+var (
+	allowedDocumentMIMEs = map[string]struct{}{
+		"application/pdf":                                                 {},
+		"application/msword":                                              {},
+		"application/vnd.openxmlformats-officedocument.wordprocessingml.document": {},
+		"application/vnd.ms-powerpoint":                                   {},
+		"application/vnd.openxmlformats-officedocument.presentationml.presentation": {},
+		"application/vnd.ms-excel":                                        {},
+		"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet":      {},
+		"text/plain":                                                      {},
+		"application/rtf":                                                 {},
+		"application/vnd.oasis.opendocument.text":                         {},
+	}
+	allowedDocumentExtensions = map[string]struct{}{
+		".pdf":  {},
+		".doc":  {},
+		".docx": {},
+		".ppt":  {},
+		".pptx": {},
+		".xls":  {},
+		".xlsx": {},
+		".txt":  {},
+		".rtf":  {},
+		".odt":  {},
+	}
+)
+
+func isAllowedUpload(contentType, filename string) bool {
+	contentType = strings.ToLower(contentType)
+	if strings.HasPrefix(contentType, "image/") || strings.HasPrefix(contentType, "video/") {
+		return true
+	}
+	if _, ok := allowedDocumentMIMEs[contentType]; ok {
+		return true
+	}
+	ext := strings.ToLower(filepath.Ext(filename))
+	if _, ok := allowedDocumentExtensions[ext]; ok {
+		return true
+	}
+	return false
+}
+
 func (s *server) handleAdminUpload() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		s.logger.Info("handleAdminUpload called")
@@ -1707,8 +1749,8 @@ func (s *server) handleAdminUpload() gin.HandlerFunc {
 		}
 
 		contentType := file.Header.Get("Content-Type")
-		if !strings.HasPrefix(contentType, "image/") && !strings.HasPrefix(contentType, "video/") {
-			s.error(c, http.StatusBadRequest, errors.New("only image and video files are allowed"))
+		if !isAllowedUpload(contentType, file.Filename) {
+			s.error(c, http.StatusBadRequest, errors.New("unsupported file type"))
 			return
 		}
 

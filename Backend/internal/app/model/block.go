@@ -13,13 +13,14 @@ const (
 	BlockTypeGallery       BlockType = "gallery"
 	BlockTypeVideo         BlockType = "video"
 	BlockTypeTextWithImage BlockType = "text-with-image"
+	BlockTypeDocument      BlockType = "document"
 )
 
 type Block struct {
 	ID        string          `json:"id"`
 	Page      string          `json:"page" validate:"required"`
 	Pages     json.RawMessage `json:"-"`
-	Type      BlockType       `json:"type" validate:"required,oneof=text slider gallery video text-with-image"`
+	Type      BlockType       `json:"type" validate:"required,oneof=text slider gallery video text-with-image document"`
 	Content   json.RawMessage `json:"content"`
 	Order     int             `json:"order"`
 	CreatedAt time.Time       `json:"created_at"`

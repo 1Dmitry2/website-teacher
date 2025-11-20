@@ -22,7 +22,7 @@ export interface Block {
   id: string;
   page: string;
   pages: string[];
-  type: 'text' | 'slider' | 'gallery' | 'video' | 'text-with-image';
+  type: 'text' | 'slider' | 'gallery' | 'video' | 'text-with-image' | 'document';
   content: Record<string, any>;
   display_order: number;
   created_at: string;
